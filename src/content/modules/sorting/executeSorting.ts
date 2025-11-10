@@ -73,18 +73,14 @@ function performSort(
       if (!item.element) return;
 
       // Use cssText for faster style application (single operation vs multiple setProperty calls)
-      // Apply content-visibility optimization for large DOM (reduces rendering cost by 95%)
       item.element.style.cssText += `
         grid-area: auto !important;
         order: ${index} !important;
-        content-visibility: auto;
-        contain: layout style;
-        contain-intrinsic-size: auto 200px;
       `;
     });
   });
 
-  return sortedTiles.length;
+  return sortedTiles;
 }
 
 /**
@@ -186,9 +182,9 @@ export async function executeSorting(
     }
 
     console.log('[Sorting] Performing sort...');
-    const tilesProcessed = performSort(sortCriteria, sortOrder);
+    const sortedTiles = performSort(sortCriteria, sortOrder);
 
-    if (tilesProcessed === 0) {
+    if (sortedTiles.length === 0) {
       console.error('[Sorting] No tiles found!');
       return {
         success: false,
@@ -198,7 +194,7 @@ export async function executeSorting(
       };
     }
 
-    console.log('[Sorting] Final sort complete:', tilesProcessed, 'tiles processed');
+    console.log('[Sorting] Final sort complete:', sortedTiles.length, 'tiles processed');
 
     await reinjectStarsCallback();
 
@@ -206,7 +202,7 @@ export async function executeSorting(
 
     return {
       success: true,
-      tilesProcessed: tilesProcessed,
+      tilesProcessed: sortedTiles.length,
       pagesLoaded: pagesLoaded,
     };
   } finally {

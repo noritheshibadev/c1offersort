@@ -1,6 +1,7 @@
 import { findViewMoreButton } from '../../shared/domHelpers';
 import { progressState } from '../index';
 import { SELECTORS } from '../../utils/constants';
+import { buildSearchIndex } from './search';
 
 function parsePaginationResult(element: HTMLElement | null): { pagesLoaded: number } {
   if (!element) {
@@ -94,7 +95,7 @@ async function executePaginationInPageContext(): Promise<number> {
         script.remove();
 
         let attempts = 0;
-        const maxWaitAttempts = 480; // 4 minutes with 500ms polling (balanced for reliability)
+        const maxWaitAttempts = 1200; // 4 minutes with 200ms polling (faster detection)
         let lastProgressTimestamp = 0;
 
         checkResult = setInterval(() => {
@@ -158,7 +159,7 @@ async function executePaginationInPageContext(): Promise<number> {
             cleanupDOMElements();
             resolve(0);
           }
-        }, 500); // Reduced from 250ms to 500ms (50% fewer polls)
+        }, 200); // Optimized: 200ms polling for faster completion detection (60% faster than 500ms)
       };
 
       script.onerror = (error) => {
@@ -206,5 +207,12 @@ export async function loadAllTiles(fullyPaginated: { value: boolean }): Promise<
 
   const pagesLoaded = await executePaginationInPageContext();
   fullyPaginated.value = true;
+
+  // Build search index after pagination completes
+  console.log('[Pagination] Building search index after pagination completion...');
+  setTimeout(() => {
+    buildSearchIndex();
+  }, 100); // Small delay to ensure DOM is stable
+
   return pagesLoaded;
 }

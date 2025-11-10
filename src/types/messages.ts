@@ -48,6 +48,48 @@ export interface SortCompleteMessage {
   };
 }
 
+export interface SearchQueryMessage {
+  type: "SEARCH_QUERY";
+  query: string;
+}
+
+export interface SearchResult {
+  merchantName: string;
+  merchantTLD: string;
+  mileageText: string;
+  score: number;
+}
+
+export interface SearchResultsMessage {
+  type: "SEARCH_RESULTS";
+  success: boolean;
+  results: SearchResult[];
+  totalMatches: number;
+  searchEnabled: boolean;
+  error?: string;
+}
+
+export interface ScrollToOfferMessage {
+  type: "SCROLL_TO_OFFER";
+  merchantTLD: string;
+}
+
+export interface BuildSearchIndexMessage {
+  type: "BUILD_SEARCH_INDEX";
+}
+
+export interface GetPaginationStatusMessage {
+  type: "GET_PAGINATION_STATUS";
+}
+
+export interface GetSortProgressMessage {
+  type: "GET_SORT_PROGRESS";
+}
+
+export interface GetFilterProgressMessage {
+  type: "GET_FILTER_PROGRESS";
+}
+
 export type ExtensionMessage =
   | PaginationProgressMessage
   | SortingStartMessage
@@ -56,5 +98,12 @@ export type ExtensionMessage =
   | InjectFavoritesRequestMessage
   | RemoveFavoritesRequestMessage
   | UpdateStarStateMessage
-  | SortCompleteMessage;
+  | SortCompleteMessage
+  | SearchQueryMessage
+  | SearchResultsMessage
+  | ScrollToOfferMessage
+  | BuildSearchIndexMessage
+  | GetPaginationStatusMessage
+  | GetSortProgressMessage
+  | GetFilterProgressMessage;
 

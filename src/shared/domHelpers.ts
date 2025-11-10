@@ -118,7 +118,7 @@ export function extractMerchantTLDFromDataTestId(tile: HTMLElement): string {
       return merchantTLD;
     }
 
-    console.warn("[Security] Invalid merchantTLD format:", merchantTLD);
+    console.warn("[Security] Invalid merchantTLD format detected");
     return "";
   } catch (error) {
     return "";

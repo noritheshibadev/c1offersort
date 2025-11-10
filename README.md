@@ -1,8 +1,14 @@
 # C1 Offers Sorter
 
-> Enhance your Capital One rewards experience with intelligent sorting and favorites management
+> Enhance your Capital One rewards experience with intelligent sorting, powerful search, and favorites management
 
 ## Features
+
+**Instant Search**
+- Search across all loaded offers by merchant name
+- Fuzzy matching finds offers even with typos
+- Click any result to instantly scroll to that offer on the page
+- Works seamlessly with thousands of offers
 
 **Smart Sorting**
 - Sort offers by highest or lowest mileage rewards
@@ -30,17 +36,35 @@
    - Visit [capitaloneoffers.com/feed](https://capitaloneoffers.com/feed) or [capitaloneoffers.com/c1-offers](https://capitaloneoffers.com/c1-offers)
    - Click the extension icon in your Chrome toolbar
 
-3. **Sort Your Offers**
+3. **Search for Offers**
+   - Use the search box to find specific merchants
+   - Click any search result to jump to that offer on the page
+   - Search works after all offers are loaded
+
+4. **Sort Your Offers**
    - Choose your sorting preference (mileage or alphabetical)
    - Select order (highest/lowest or A-Z/Z-A)
-   - Click "Sort Offers"
+   - Click "Load & Sort Offers"
 
-4. **Manage Favorites**
+5. **Manage Favorites**
    - Toggle "Favorites" switch to enable star buttons
    - Click stars on offers to mark as favorites
    - Use "Show Favorites Only" to filter the page
 
 ## Usage
+
+### Searching Offers
+
+1. Navigate to [capitaloneoffers.com/feed](https://capitaloneoffers.com/feed) or [capitaloneoffers.com/c1-offers](https://capitaloneoffers.com/c1-offers)
+2. Click the extension icon
+3. Click "Load & Sort Offers" to load all available offers (required for search)
+4. Type in the search box to find specific merchants
+5. Click any search result to instantly jump to that offer on the page
+
+**Tips:**
+- Search uses fuzzy matching—it works even if you misspell the merchant name
+- Search becomes available after pagination completes (all offers loaded)
+- Results show merchant name and mileage value
 
 ### Sorting Offers
 
@@ -48,13 +72,14 @@
 2. Click the extension icon
 3. Select sort criteria (Mileage or Alphabetical)
 4. Choose order (Highest/Lowest or A-Z/Z-A)
-5. Click "Sort Offers"
+5. Click "Load & Sort Offers"
 
 ### Managing Favorites
 
 1. Toggle the favorites switch in the popup
 2. Click star buttons on any offer
 3. Click "Show Favorites Only" to filter the page
+4. View your favorites list by clicking "Your Favorites"
 
 ## Privacy & Security
 

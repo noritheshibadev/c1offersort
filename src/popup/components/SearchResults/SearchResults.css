@@ -1,0 +1,58 @@
+.search-results-container {
+  position: relative;
+}
+
+.search-results-list {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.search-result-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background-color: #f5f5f5;
+}
+
+.search-result-item:active {
+  background-color: #e8e8e8;
+}
+
+.search-result-merchant {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+  flex: 1;
+}
+
+.search-result-mileage {
+  font-size: 12px;
+  color: #25810e;
+  font-weight: 500;
+  margin-left: 12px;
+  white-space: nowrap;
+}

@@ -3,6 +3,8 @@ import { applyFavoritesFilter, loadAllOffers } from '../modules/favorites/filter
 import { injectFavorites, removeFavoritesStars } from '../modules/favorites/inject';
 import { updateStarState } from '../modules/favorites/updateStarState';
 import { getWatcherCleanup } from '../index';
+import { buildSearchIndex, executeSearch, scrollToOffer, isSearchIndexReady } from '../modules/search';
+import { findAllTiles } from '../../shared/domHelpers';
 
 /**
  * Sets up the Chrome message listener for handling requests from the popup.
@@ -107,6 +109,25 @@ export function setupMessageHandler(
           return {
             isActive: progressState.filter.isActive,
             progress: progressState.filter.progress,
+          };
+        case 'BUILD_SEARCH_INDEX':
+          console.log('[MessageHandler] Processing BUILD_SEARCH_INDEX');
+          return buildSearchIndex();
+        case 'SEARCH_QUERY':
+          console.log('[MessageHandler] Processing SEARCH_QUERY:', message.query);
+          const searchResult = executeSearch(message.query);
+          return {
+            ...searchResult,
+            searchEnabled: isSearchIndexReady(),
+          };
+        case 'SCROLL_TO_OFFER':
+          console.log('[MessageHandler] Processing SCROLL_TO_OFFER');
+          return scrollToOffer(message.merchantTLD);
+        case 'GET_PAGINATION_STATUS':
+          console.log('[MessageHandler] Processing GET_PAGINATION_STATUS');
+          return {
+            fullyPaginated: fullyPaginated.value,
+            offerCount: findAllTiles().length,
           };
         default:
           console.log('[MessageHandler] Unknown message type:', message.type);

@@ -8,7 +8,7 @@ import { findAllTiles, extractMerchantTLD } from '@/shared/domHelpers';
  * @param isFavorited - Whether the merchant is now favorited
  */
 export function updateStarState(merchantTLD: string, isFavorited: boolean): void {
-  console.log(`[UpdateStarState] Updating star for ${merchantTLD} to ${isFavorited ? 'favorited' : 'unfavorited'}`);
+  console.log(`[UpdateStarState] Updating star to ${isFavorited ? 'favorited' : 'unfavorited'}`);
 
   const tiles = findAllTiles();
 
@@ -28,7 +28,7 @@ export function updateStarState(merchantTLD: string, isFavorited: boolean): void
           "title",
           isFavorited ? "Remove from favorites" : "Add to favorites"
         );
-        console.log(`[UpdateStarState] Updated star button for ${merchantTLD}`);
+        console.log('[UpdateStarState] Updated star button');
       }
     }
   }

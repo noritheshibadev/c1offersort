@@ -76,6 +76,7 @@ export class MessageBus {
 
   /**
    * Listen for messages of a specific type
+   * @returns Cleanup function to remove the listener
    */
   static onMessage<T extends ExtensionMessage>(
     handler: (
@@ -83,8 +84,8 @@ export class MessageBus {
       sender: chrome.runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ) => void | boolean | Promise<void>
-  ): void {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  ): () => void {
+    const listener = (message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: unknown) => void) => {
       try {
         const result = handler(message as T, sender, sendResponse);
         // Return true if handler is async or needs to send response later
@@ -99,11 +100,19 @@ export class MessageBus {
         console.error('[MessageBus] Message handler error:', error);
         return false;
       }
-    });
+    };
+
+    chrome.runtime.onMessage.addListener(listener);
+
+    // Return cleanup function
+    return () => {
+      chrome.runtime.onMessage.removeListener(listener);
+    };
   }
 
   /**
    * Listen for messages from tabs only
+   * @returns Cleanup function to remove the listener
    */
   static onMessageFromTab<T extends ExtensionMessage>(
     handler: (
@@ -111,8 +120,8 @@ export class MessageBus {
       sender: chrome.runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ) => void | boolean | Promise<void>
-  ): void {
-    this.onMessage<T>((message, sender, sendResponse) => {
+  ): () => void {
+    return this.onMessage<T>((message, sender, sendResponse) => {
       if (sender.tab) {
         return handler(message, sender, sendResponse);
       }
@@ -150,6 +159,7 @@ export class MessageBus {
 /**
  * Type-safe message listener decorator
  * Usage: Use MessageBus.onMessage with type guards for specific message types
+ * @returns Cleanup function to remove the listener
  */
 export function createMessageListener<T extends ExtensionMessage>(
   typeGuard: (msg: unknown) => msg is T,
@@ -158,8 +168,8 @@ export function createMessageListener<T extends ExtensionMessage>(
     sender: chrome.runtime.MessageSender,
     sendResponse: (response?: unknown) => void
   ) => void | boolean | Promise<void>
-): void {
-  MessageBus.onMessage((message, sender, sendResponse) => {
+): () => void {
+  return MessageBus.onMessage((message, sender, sendResponse) => {
     if (typeGuard(message)) {
       return handler(message, sender, sendResponse);
     }
