@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { SortConfig, SortResult } from "../../types";
-import { executeSortInActiveTab, getCurrentTab } from "../services/chromeApi";
 import { isValidCapitalOneUrl } from "../../utils/typeGuards";
 import { isSortingError } from "../../utils/errors";
+import { chromeService } from "@/services/ChromeService";
 
 interface ProgressUpdate {
   type: "pagination" | "sorting";
@@ -47,12 +47,10 @@ export function useSortOffers(): UseSortOffersResult {
   useEffect(() => {
     async function queryProgress() {
       try {
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tabs[0]?.id) return;
+        const tab = await chromeService.getCurrentTab();
+        if (!tab?.id) return;
 
-        const response = await chrome.tabs.sendMessage(tabs[0].id, {
-          type: 'GET_SORT_PROGRESS'
-        });
+        const response = await chromeService.getSortProgress(tab.id);
 
         if (response && response.isActive) {
           setIsLoading(true);
@@ -153,7 +151,7 @@ export function useSortOffers(): UseSortOffersResult {
     setProgressUpdate(null);
 
     try {
-      const currentTab = await getCurrentTab();
+      const currentTab = await chromeService.getCurrentTab();
       console.log('[useSortOffers] Current tab:', currentTab?.url);
 
       if (!isValidCapitalOneUrl(currentTab?.url)) {
@@ -168,8 +166,20 @@ export function useSortOffers(): UseSortOffersResult {
         return;
       }
 
+      if (!currentTab.id) {
+        console.error('[useSortOffers] Tab has no ID');
+        const errorResult: SortResult = {
+          success: false,
+          tilesProcessed: 0,
+          pagesLoaded: 0,
+          error: "Could not identify the active tab",
+        };
+        setLastResult(errorResult);
+        return;
+      }
+
       console.log('[useSortOffers] Executing sort in active tab...');
-      const result = await executeSortInActiveTab(sortConfig);
+      const result = await chromeService.sendSortRequest(currentTab.id, sortConfig);
       console.log('[useSortOffers] Sort result:', result);
       setLastResult(result);
 

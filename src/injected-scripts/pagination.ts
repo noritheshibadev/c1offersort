@@ -37,10 +37,34 @@
     console.log('[Pagination Injected] Tile selector:', tileSelector);
   }
 
-  function countRealTiles(): number {
+  // ========================================
+  // TIER 1 OPTIMIZATIONS: DOM CACHING
+  // Cache DOM references to reduce repeated queries
+  // ========================================
+  let cachedContainer: Element | null = null;
+  let cachedButton: HTMLButtonElement | null = null;
+  let cachedReactPropsKey: string | null = null;
+
+  function getContainer(): Element | null {
+    if (cachedContainer && cachedContainer.isConnected) {
+      return cachedContainer;
+    }
+
     // Try layout-specific selector first
-    if (tileSelector && containerSelector) {
-      const container = document.querySelector(containerSelector);
+    if (containerSelector) {
+      cachedContainer = document.querySelector(containerSelector);
+      if (cachedContainer) {
+        return cachedContainer;
+      }
+    }
+
+    return null;
+  }
+
+  function countRealTiles(): number {
+    // Try layout-specific selector first with cached container
+    if (tileSelector) {
+      const container = getContainer();
       if (container) {
         const tiles = container.querySelectorAll(tileSelector);
         console.log('[Pagination Injected] Counted', tiles.length, 'tiles using layout selector');
@@ -62,10 +86,19 @@
   }
 
   function findViewMoreButton(): HTMLButtonElement | null {
+    // Check if cached button is still valid
+    if (cachedButton && cachedButton.isConnected) {
+      return cachedButton;
+    }
+
+    // Cache miss or invalidated - search for button
+    let button: HTMLButtonElement | null = null;
+
     // Try layout-specific selector first
     if (viewMoreSelector) {
-      const button = document.querySelector(viewMoreSelector) as HTMLButtonElement;
+      button = document.querySelector(viewMoreSelector) as HTMLButtonElement;
       if (button && button.isConnected) {
+        cachedButton = button;
         return button;
       }
     }
@@ -76,11 +109,17 @@
       const text = btn.textContent?.trim() || '';
       // Check for "View More Offers" with flexible whitespace
       if (text.includes('View More') && text.includes('Offers')) {
-        return btn as HTMLButtonElement;
+        button = btn as HTMLButtonElement;
+        cachedButton = button;
+        return button;
       }
     }
 
     return null;
+  }
+
+  function invalidateButtonCache(): void {
+    cachedButton = null;
   }
 
   let activeTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -101,6 +140,44 @@
     }
   }
 
+  // ========================================
+  // TIER 2 OPTIMIZATIONS: DYNAMIC WAIT WITH EARLY EXIT
+  // Poll for new tiles and exit early when detected, but always respect MIN_DELAY
+  // ========================================
+  async function waitForNewTiles(startCount: number, maxWait: number): Promise<number> {
+    const startTime = Date.now();
+    const pollInterval = 50; // Check every 50ms for new tiles
+    let lastCount = startCount;
+
+    while (true) {
+      const elapsed = Date.now() - startTime;
+
+      // Always wait at least MIN_DELAY to protect slow React rendering
+      if (elapsed < MIN_DELAY) {
+        await wait(pollInterval);
+        continue;
+      }
+
+      // After MIN_DELAY, check for new tiles
+      const currentCount = countRealTiles();
+
+      if (currentCount > lastCount) {
+        // New tiles detected! Exit early
+        const actualTime = Date.now() - startTime;
+        console.log('[Pagination Injected] Early exit: new tiles detected after', actualTime, 'ms (saved', maxWait - actualTime, 'ms)');
+        return actualTime;
+      }
+
+      // Check if we've exceeded max wait time
+      if (elapsed >= maxWait) {
+        return Date.now() - startTime;
+      }
+
+      lastCount = currentCount;
+      await wait(pollInterval);
+    }
+  }
+
   function withPreservedScroll(fn: () => void): void {
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
@@ -110,11 +187,15 @@
 
   function triggerReactClick(element: HTMLElement): boolean {
     // Method 1: Direct React props click (most reliable for React apps)
-    const propsKey = Object.keys(element).find(key => key.startsWith('__reactProps'));
-    if (propsKey) {
-      const props = (element as any)[propsKey];
+    // Cache the propsKey after first discovery for faster subsequent calls
+    if (!cachedReactPropsKey) {
+      cachedReactPropsKey = Object.keys(element).find(key => key.startsWith('__reactProps')) || null;
+    }
+
+    if (cachedReactPropsKey) {
+      const props = (element as any)[cachedReactPropsKey];
       if (props && props.onClick) {
-        console.log('[Pagination Injected] Triggering React onClick handler directly');
+        console.log('[Pagination Injected] Triggering React onClick handler directly (cached key)');
         props.onClick();
         return true;
       }
@@ -162,6 +243,13 @@
   let consecutiveFailures = 0;
   const maxConsecutiveFailures = 3;
 
+  // ========================================
+  // TIER 2 OPTIMIZATIONS: MOVING AVERAGE
+  // Track recent response times for smoother delay adjustment
+  // ========================================
+  const responseTimeHistory: number[] = [];
+  const HISTORY_SIZE = 5;
+
   console.log('[Pagination Injected] Starting pagination loop with adaptive delays');
 
   // Create abort signal element for cleanup
@@ -197,6 +285,9 @@
 
     if (!button) {
       console.log('[Pagination Injected] Button not found on attempt', attempt + 1, '/', maxAttempts, '- retrying with exponential backoff...');
+
+      // Invalidate button cache since it's not found
+      invalidateButtonCache();
 
       // Exponential backoff: if React is still rendering, give it progressively more time
       for (let retry = 0; retry < MAX_RETRIES; retry++) {
@@ -239,13 +330,18 @@
       }
     });
 
-    console.log('[Pagination Injected] Button clicked, waiting', currentDelay, 'ms before checking...');
-    await wait(currentDelay);
+    // Invalidate button cache after click - React will re-render a new button
+    invalidateButtonCache();
+
+    console.log('[Pagination Injected] Button clicked, waiting up to', currentDelay, 'ms (with early exit)...');
+
+    // Use dynamic wait with early exit (respects MIN_DELAY floor)
+    const actualWaitTime = await waitForNewTiles(beforeCount, currentDelay);
 
     const afterCount = countRealTiles();
     const responseTime = Date.now() - clickStartTime;
     const tileDiff = afterCount - beforeCount;
-    console.log('[Pagination Injected] After wait, tiles:', afterCount, '(+' + tileDiff + ') response:', responseTime + 'ms');
+    console.log('[Pagination Injected] After wait, tiles:', afterCount, '(+' + tileDiff + ') response:', responseTime + 'ms', 'actual wait:', actualWaitTime + 'ms');
 
     // ====================================
     // CHECK FOR NEW TILES
@@ -266,18 +362,31 @@
       progressElement.setAttribute('data-pages-loaded', pagesLoaded.toString());
       progressElement.setAttribute('data-timestamp', Date.now().toString());
 
-      // Adaptive delay based on actual performance
-      if (responseTime < FAST_THRESHOLD) {
-        // Response was fast - speed up aggressively
+      // ====================================
+      // TIER 2 OPTIMIZATION: MOVING AVERAGE DELAY ADJUSTMENT
+      // Use average of recent response times for smoother adaptation
+      // ====================================
+      responseTimeHistory.push(responseTime);
+      if (responseTimeHistory.length > HISTORY_SIZE) {
+        responseTimeHistory.shift(); // Keep only last 5 samples
+      }
+
+      // Calculate moving average
+      const avgResponseTime = responseTimeHistory.reduce((sum, time) => sum + time, 0) / responseTimeHistory.length;
+      console.log('[Pagination Injected] Response time:', responseTime, 'ms, moving avg:', Math.round(avgResponseTime), 'ms');
+
+      // Adaptive delay based on moving average (smoother than single-sample)
+      if (avgResponseTime < FAST_THRESHOLD) {
+        // Average response is fast - speed up aggressively
         currentDelay = Math.max(currentDelay * 0.75, MIN_DELAY);
-        console.log('[Pagination Injected] Fast response (', responseTime, 'ms) - reducing delay to', Math.round(currentDelay), 'ms');
-      } else if (responseTime < SLOW_THRESHOLD) {
-        // Normal response - moderate speedup
+        console.log('[Pagination Injected] Fast avg response (', Math.round(avgResponseTime), 'ms) - reducing delay to', Math.round(currentDelay), 'ms');
+      } else if (avgResponseTime < SLOW_THRESHOLD) {
+        // Normal average response - moderate speedup
         currentDelay = Math.max(currentDelay * 0.88, MIN_DELAY);
-        console.log('[Pagination Injected] Normal response (', responseTime, 'ms) - reducing delay to', Math.round(currentDelay), 'ms');
+        console.log('[Pagination Injected] Normal avg response (', Math.round(avgResponseTime), 'ms) - reducing delay to', Math.round(currentDelay), 'ms');
       } else {
-        // Slow response - maintain current delay
-        console.log('[Pagination Injected] Slow response (', responseTime, 'ms) - keeping delay at', Math.round(currentDelay), 'ms');
+        // Slow average response - maintain current delay
+        console.log('[Pagination Injected] Slow avg response (', Math.round(avgResponseTime), 'ms) - keeping delay at', Math.round(currentDelay), 'ms');
       }
     } else {
       consecutiveFailures++;

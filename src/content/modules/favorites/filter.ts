@@ -53,6 +53,7 @@ export async function applyFavoritesFilter(
     let shownCount = 0;
     const missingFavorites: string[] = [];
     const foundFavorites = new Set<string>();
+    const visibleTiles: HTMLElement[] = [];
 
     for (const tile of tiles) {
       const merchantTLD = extractMerchantTLD(tile as HTMLElement);
@@ -63,6 +64,7 @@ export async function applyFavoritesFilter(
           (tile as HTMLElement).style.removeProperty('display');
           (tile as HTMLElement).style.setProperty('grid-area', 'auto', 'important');
           (tile as HTMLElement).style.setProperty('order', '0', 'important');
+          visibleTiles.push(tile as HTMLElement);
           shownCount++;
           foundFavorites.add(merchantTLD);
         } else {
@@ -70,6 +72,7 @@ export async function applyFavoritesFilter(
           hiddenCount++;
         }
       } else {
+        // Turning filter off - reset everything
         (tile as HTMLElement).style.removeProperty('display');
         (tile as HTMLElement).style.removeProperty('grid-area');
         (tile as HTMLElement).style.removeProperty('order');

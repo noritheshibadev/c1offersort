@@ -10,6 +10,7 @@ interface SortButtonProps {
 
 /**
  * Button component for triggering the sort operation.
+ * Loads all offers from all pages, then sorts them according to the selected criteria and order.
  * Displays a loading spinner and "Loading..." text while sorting is in progress.
  * Includes visual feedback with a pressed state animation.
  *
@@ -31,7 +32,7 @@ export const SortButton: React.FC<SortButtonProps> = ({
       onClick={onClick}
       disabled={isDisabled}
       aria-busy={isLoading}
-      aria-label={isLoading ? "Sorting offers..." : "Sort offers"}
+      aria-label={isLoading ? "Loading all offers..." : "Load all offers"}
       onMouseDown={() => !isDisabled && setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
       onMouseLeave={() => setIsPressed(false)}
@@ -42,7 +43,7 @@ export const SortButton: React.FC<SortButtonProps> = ({
           <span>Loading...</span>
         </div>
       ) : (
-        "Sort Offers"
+        "Load All Offers"
       )}
     </button>
   );

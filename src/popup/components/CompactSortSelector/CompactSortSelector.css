@@ -1,0 +1,92 @@
+.compact-sort-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-yellow);
+  border-radius: 4px;
+}
+
+.sort-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-yellow);
+  white-space: nowrap;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.sort-criteria-dropdown {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--color-white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  min-width: 0;
+  max-width: 160px;
+}
+
+.sort-criteria-dropdown:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sort-criteria-dropdown:focus {
+  border-color: var(--color-yellow);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Dropdown arrow styling for webkit browsers */
+.sort-criteria-dropdown {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px;
+  padding-right: 26px;
+}
+
+.sort-order-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.order-button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.order-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.order-button.active {
+  background-color: rgba(255, 221, 0, 0.15);
+  color: var(--color-yellow);
+  border-color: var(--color-yellow);
+  font-weight: bold;
+}
+
+.order-button:active {
+  transform: scale(0.95);
+}

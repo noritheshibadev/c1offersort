@@ -49,3 +49,6 @@ Thumbs.db
 
 # Internal documentation
 .claude/CLAUDE.md
+
+# Analysis and testing artifacts
+analysis/

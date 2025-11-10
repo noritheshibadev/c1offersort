@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "C1 Offers Sorter",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "A small utility extension used to load and sort all C1 offers by mileage or merchant name.",
   "minimum_chrome_version": "109",
   "permissions": ["activeTab", "scripting", "storage"],

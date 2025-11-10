@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getCurrentTab } from "../services/chromeApi";
+import { chromeService } from "@/services/ChromeService";
 
 /**
  * Custom hook that fetches and returns the URL of the current active tab.
@@ -11,7 +11,7 @@ export function useCurrentTab(): string {
   const [currentUrl, setCurrentUrl] = useState<string>("");
 
   useEffect(() => {
-    getCurrentTab()
+    chromeService.getCurrentTab()
       .then((tab) => {
         if (tab?.url) {
           setCurrentUrl(tab.url);

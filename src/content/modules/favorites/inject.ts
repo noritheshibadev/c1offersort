@@ -319,6 +319,19 @@ export async function injectFavorites(
     window.addEventListener('beforeunload', () => {
       observer.disconnect();
       favoritesObserverRef.current = null;
+
+      // Clean up IntersectionObserver
+      if (starInjectionObserver) {
+        starInjectionObserver.disconnect();
+        starInjectionObserver = null;
+      }
+
+      // Clean up event delegation
+      if (clickAbortController) {
+        clickAbortController.abort();
+        clickAbortController = null;
+      }
+      eventDelegationSetup = false;
     }, { once: true });
 
     return {
