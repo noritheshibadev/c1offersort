@@ -8,6 +8,8 @@ import {
 import type { SortResult } from '@/types';
 import { loadAllTiles } from '../pagination';
 import { getWatcherCleanup } from '../../index';
+import { getViewMode, updateViewMode } from '../../messaging/messageHandler';
+import { removeTableView, applyTableView } from '../tableView';
 
 interface TileData {
   element: HTMLElement;
@@ -54,7 +56,7 @@ function performSort(
     .filter((item) => item.element !== null);
 
   // PHASE 2: SORT - Process data (no DOM access)
-  const isDescending = sortOrder === "desc";
+  const isDescending = sortOrder === "desc" || sortOrder.startsWith("desc-");
 
   const sortedTiles = tilesWithData.sort((a, b) => {
     if (sortCriteria === "alphabetical") {
@@ -62,6 +64,31 @@ function performSort(
       const nameB = b.merchantName.toLowerCase();
       const comparison = nameA.localeCompare(nameB);
       return isDescending ? -comparison : comparison;
+    } else if (sortCriteria === "merchantMileage") {
+      // Parse the combined sort order (e.g., "desc-asc" = high miles, A-Z merchants)
+      // Format: <mileage-direction>-<merchant-direction>
+      const [mileageDir, merchantDir] = sortOrder.includes("-")
+        ? sortOrder.split("-")
+        : ["desc", "asc"]; // Default: high miles, A-Z
+
+      const isMileageDesc = mileageDir === "desc";
+      const isMerchantDesc = merchantDir === "desc";
+
+      // Sort by mileage first
+      const mileageComparison = isMileageDesc
+        ? b.mileage - a.mileage
+        : a.mileage - b.mileage;
+
+      if (mileageComparison !== 0) {
+        // Different mileage values - sort by mileage
+        return mileageComparison;
+      } else {
+        // Same mileage value - sort by merchant name (respecting direction)
+        const nameA = a.merchantName.toLowerCase();
+        const nameB = b.merchantName.toLowerCase();
+        const nameComparison = nameA.localeCompare(nameB);
+        return isMerchantDesc ? -nameComparison : nameComparison;
+      }
     } else {
       return isDescending ? b.mileage - a.mileage : a.mileage - b.mileage;
     }
@@ -90,6 +117,11 @@ function performSort(
 /**
  * Executes the sorting operation on Capital One offer tiles.
  * Loads all tiles via pagination, extracts mileage/merchant data, and reorders using CSS order property.
+ *
+ * In table view mode:
+ * - Only sorts currently visible tiles (respecting favorites filter)
+ * - Skips pagination (tiles already loaded)
+ * - Refreshes table view to reflect new order
  *
  * @param sortCriteria - "mileage" or "alphabetical"
  * @param sortOrder - "asc" or "desc"
@@ -131,6 +163,118 @@ export async function executeSorting(
 
   isSortInProgress = true;
 
+  // Check if table view is active by checking the view mode state
+  // (checking DOM is unreliable since we're about to modify it)
+  const currentViewMode = getViewMode();
+  const isTableViewActive = currentViewMode === 'table';
+  console.log('[Sorting] Current view mode:', currentViewMode, 'isTableViewActive:', isTableViewActive);
+
+  if (isTableViewActive) {
+    console.log('[Sorting] Table view detected - will switch to grid, load all offers, sort, then re-apply table view');
+
+    try {
+      // Remove table view temporarily to access all tiles in grid
+      await removeTableView();
+
+      // PERFORMANCE FIX: Disconnect MutationObserver BEFORE sorting
+      const watcherCleanup = getWatcherCleanup();
+      if (watcherCleanup) {
+        console.log('[Sorting] Disabling tiles watcher observer before sort');
+        watcherCleanup.disableObserverOnly();
+      }
+
+      const mainContainer = findMainContainer();
+      if (!mainContainer) {
+        return {
+          success: false,
+          tilesProcessed: 0,
+          pagesLoaded: 0,
+          error: "Could not find offers container on the page.",
+        };
+      }
+
+      // Set grid properties for sorting
+      console.log('[Sorting] Setting grid properties on main container');
+      mainContainer.style.setProperty("display", "grid", "important");
+      mainContainer.style.gridTemplateAreas = "none";
+      mainContainer.style.gridAutoFlow = "row";
+
+      // Hide carousel if present
+      const carouselElement = document.querySelector('.app-page[style*="grid-column"]') as HTMLElement;
+      if (carouselElement?.style) {
+        carouselElement.style.display = "none";
+      }
+
+      // Scroll to "Additional Offers" section before pagination
+      const additionalOffersHeader = Array.from(document.querySelectorAll("h2")).find(
+        h => h.textContent?.includes("Additional Offers")
+      );
+      if (additionalOffersHeader) {
+        console.log('[Sorting] Scrolling to Additional Offers header before pagination');
+        additionalOffersHeader.scrollIntoView({ behavior: "smooth", block: "start" });
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Enable progress tracking
+      if (progressState) {
+        progressState.sort.isActive = true;
+      }
+
+      // Load all tiles through pagination (this was missing!)
+      console.log('[Sorting] Starting pagination to load all offers...');
+      let pagesLoaded = 0;
+      try {
+        pagesLoaded = await loadAllTiles(fullyPaginated);
+        console.log('[Sorting] Pagination complete, pages loaded:', pagesLoaded);
+      } finally {
+        if (progressState) {
+          progressState.sort.isActive = false;
+        }
+      }
+
+      // Perform the sort on all tiles
+      console.log('[Sorting] Performing sort...');
+      const tilesProcessed = performSort(sortCriteria, sortOrder);
+
+      if (tilesProcessed === 0) {
+        console.error('[Sorting] No tiles found!');
+        return {
+          success: false,
+          tilesProcessed: 0,
+          pagesLoaded: pagesLoaded,
+          error: "No offer tiles found.",
+        };
+      }
+
+      console.log('[Sorting] Sort complete:', tilesProcessed, 'tiles processed');
+
+      await reinjectStarsCallback();
+
+      // Re-apply table view to show sorted results
+      console.log('[Sorting] Re-applying table view...');
+      const tableResult = await applyTableView();
+      console.log('[Sorting] Table view apply result:', tableResult);
+
+      if (tableResult.success) {
+        // Update the view mode state to reflect that we're back in table view
+        updateViewMode('table');
+        console.log('[Sorting] View mode updated to table');
+      } else {
+        console.error('[Sorting] Failed to re-apply table view:', tableResult.error);
+      }
+
+      return {
+        success: true,
+        tilesProcessed: tilesProcessed,
+        pagesLoaded: pagesLoaded,
+      };
+    } finally {
+      isSortInProgress = false;
+      console.log('[Sorting] Table view sort operation complete');
+    }
+  }
+
+  // Grid view sorting (original logic)
   // PERFORMANCE FIX: Disconnect MutationObserver BEFORE sorting to prevent 1,500+ mutation events
   const watcherCleanup = getWatcherCleanup();
   if (watcherCleanup) {

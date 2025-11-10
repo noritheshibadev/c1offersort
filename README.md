@@ -97,6 +97,27 @@ yarn install
 yarn build
 ```
 
+### Testing
+
+Run the test suite to ensure everything works:
+
+```bash
+# Run all tests
+yarn test:run
+
+# Run tests in watch mode (for development)
+yarn test
+
+# Run tests with UI
+yarn test:ui
+
+# Run tests with coverage report
+yarn test:coverage
+
+# Type checking
+yarn typecheck
+```
+
 ### Load in Chrome
 
 1. Navigate to `chrome://extensions`

@@ -11,6 +11,49 @@ import { VALID_URLS } from '../utils/constants';
 
 console.log(`${config.logging.contexts.content} Initializing C1 Offers Sorter...`);
 
+// Clear view mode, favorites enabled state, and favorites filter on page load since we always start fresh
+chrome.storage.local.remove('c1-view-mode').catch(() => {
+  // Ignore errors if key doesn't exist
+});
+chrome.storage.local.remove('c1-favorites-enabled').catch(() => {
+  // Ignore errors if key doesn't exist
+});
+chrome.storage.local.remove('c1-favorites-filter-active').catch(() => {
+  // Ignore errors if key doesn't exist
+});
+
+// Reset any favorites filter that might have been applied before page reload
+// This ensures tiles are visible and not hidden by a previous filter state
+(async () => {
+  try {
+    const { findAllTiles, findMainContainer } = await import('@/shared/domHelpers');
+
+    // Wait a bit for DOM to be ready
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const tiles = findAllTiles(true); // Suppress warning during initialization
+    const mainContainer = findMainContainer();
+
+    // Remove any filter-applied styles from tiles
+    for (const tile of tiles) {
+      (tile as HTMLElement).style.removeProperty('display');
+      (tile as HTMLElement).style.removeProperty('grid-area');
+      (tile as HTMLElement).style.removeProperty('order');
+    }
+
+    // Reset container grid properties
+    if (mainContainer) {
+      mainContainer.style.removeProperty('display');
+      mainContainer.style.removeProperty('grid-template-areas');
+      mainContainer.style.removeProperty('grid-auto-flow');
+    }
+
+    console.log(`${config.logging.contexts.content} Reset favorites filter on page load`);
+  } catch (error) {
+    console.log(`${config.logging.contexts.content} No filter to reset on page load`);
+  }
+})();
+
 // Validate we're on a Capital One offers page
 const currentUrl = window.location.href;
 const isValidPage = VALID_URLS.some(validUrl => currentUrl.startsWith(validUrl));
@@ -64,5 +107,13 @@ setupMessageHandler(
 
 console.log(`${config.logging.contexts.content} Setting up tiles watcher...`);
 tilesWatcherCleanup = setupTilesWatcher(processedTiles);
+
+// Flush pending favorites saves on unload
+window.addEventListener('beforeunload', async () => {
+  const { flushFavoritesSave } = await import('../shared/favoritesHelpers');
+  await flushFavoritesSave().catch(err => {
+    console.error('[Content] Failed to flush favorites on unload:', err);
+  });
+});
 
 console.log(`${config.logging.contexts.content} Initialization complete`);

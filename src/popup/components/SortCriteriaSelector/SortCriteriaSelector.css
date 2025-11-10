@@ -1,30 +1,34 @@
 .sort-criteria-selector {
-  border: 1px solid var(--color-yellow);
-  padding: 12px;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-xs);
+  background-color: var(--color-surface);
 }
 
 .sort-criteria-selector legend {
-  font-weight: bold;
-  color: var(--color-yellow);
-  padding: 0 4px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  padding: 0 var(--spacing-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .sort-criteria-selector label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
 }
 
-.sort-criteria-selector label:hover {
-  background-color: rgba(255, 221, 0, 0.1);
+.sort-criteria-selector label:hover:not(:has(input:disabled)) {
+  background-color: var(--color-surface-hover);
 }
 
 .sort-criteria-selector input[type="radio"] {
@@ -32,8 +36,20 @@
   width: 16px;
   height: 16px;
   accent-color: var(--color-yellow);
+  flex-shrink: 0;
+}
+
+.sort-criteria-selector input[type="radio"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .sort-criteria-selector span {
-  color: var(--color-white);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  user-select: none;
+}
+
+.sort-criteria-selector:has(input:disabled) {
+  opacity: 0.6;
 }

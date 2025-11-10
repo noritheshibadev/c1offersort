@@ -27,9 +27,10 @@ describe("useFavorites - User Behaviors", () => {
     },
   ];
 
+  const mockUrl = "https://capitaloneoffers.com/feed";
+
   beforeEach(() => {
     vi.clearAllMocks();
-
     vi.mocked(favoritesManager.getFavorites).mockResolvedValue([]);
   });
 
@@ -37,10 +38,10 @@ describe("useFavorites - User Behaviors", () => {
     it("should load favorites from storage on mount", async () => {
       vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
 
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       await waitFor(() => {
-        expect(favoritesManager.getFavorites).toHaveBeenCalled();
+        expect(favoritesManager.getFavorites).toHaveBeenCalledWith(mockUrl);
       });
 
       await waitFor(() => {
@@ -50,7 +51,7 @@ describe("useFavorites - User Behaviors", () => {
     });
 
     it("should show zero favorites when none exist", async () => {
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       await waitFor(() => {
         expect(result.current.favorites).toEqual([]);
@@ -58,16 +59,21 @@ describe("useFavorites - User Behaviors", () => {
       });
     });
 
-    it("should start with favorites filter disabled", () => {
-      const { result } = renderHook(() => useFavorites());
+    it("should not load favorites when URL is null", async () => {
+      const { result } = renderHook(() => useFavorites(null));
 
-      expect(result.current.showFavoritesOnly).toBe(false);
+      // Wait a bit to ensure no async operations happen
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(favoritesManager.getFavorites).not.toHaveBeenCalled();
+      expect(result.current.favorites).toEqual([]);
+      expect(result.current.favoritesCount).toBe(0);
     });
   });
 
   describe("User Favorites Offers from Page", () => {
     it("should refresh and show updated favorites count", async () => {
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       await waitFor(() => {
         expect(result.current.favoritesCount).toBe(0);
@@ -84,7 +90,7 @@ describe("useFavorites - User Behaviors", () => {
     });
 
     it("should handle adding multiple favorites", async () => {
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       vi.mocked(favoritesManager.getFavorites).mockResolvedValue([mockFavorites[0]]);
       await act(async () => {
@@ -100,57 +106,11 @@ describe("useFavorites - User Behaviors", () => {
     });
   });
 
-  describe("User Toggles Show Favorites Filter", () => {
-    it("should toggle filter on when user clicks", () => {
-      const { result } = renderHook(() => useFavorites());
-
-      expect(result.current.showFavoritesOnly).toBe(false);
-
-      act(() => {
-        result.current.toggleShowFavoritesOnly();
-      });
-
-      expect(result.current.showFavoritesOnly).toBe(true);
-    });
-
-    it("should toggle filter off when user clicks again", () => {
-      const { result } = renderHook(() => useFavorites());
-
-      act(() => {
-        result.current.toggleShowFavoritesOnly();
-      });
-
-      expect(result.current.showFavoritesOnly).toBe(true);
-
-      act(() => {
-        result.current.toggleShowFavoritesOnly();
-      });
-
-      expect(result.current.showFavoritesOnly).toBe(false);
-    });
-
-    it("should allow direct setting of filter state", () => {
-      const { result } = renderHook(() => useFavorites());
-
-      act(() => {
-        result.current.setShowFavoritesOnly(true);
-      });
-
-      expect(result.current.showFavoritesOnly).toBe(true);
-
-      act(() => {
-        result.current.setShowFavoritesOnly(false);
-      });
-
-      expect(result.current.showFavoritesOnly).toBe(false);
-    });
-  });
-
   describe("User Removes Favorites from List", () => {
     it("should update count after removing a favorite", async () => {
       vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
 
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       await waitFor(() => {
         expect(result.current.favoritesCount).toBe(2);
@@ -169,7 +129,7 @@ describe("useFavorites - User Behaviors", () => {
     it("should handle removing all favorites", async () => {
       vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
 
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       await waitFor(() => {
         expect(result.current.favoritesCount).toBe(2);
@@ -190,7 +150,7 @@ describe("useFavorites - User Behaviors", () => {
     it("should reload favorites from storage on each mount", async () => {
       vi.mocked(favoritesManager.getFavorites).mockResolvedValue([mockFavorites[0]]);
 
-      const { unmount } = renderHook(() => useFavorites());
+      const { unmount } = renderHook(() => useFavorites(mockUrl));
 
       await waitFor(() => {
         expect(favoritesManager.getFavorites).toHaveBeenCalledTimes(1);
@@ -200,7 +160,7 @@ describe("useFavorites - User Behaviors", () => {
 
       vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
 
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       await waitFor(() => {
         expect(favoritesManager.getFavorites).toHaveBeenCalledTimes(2);
@@ -212,43 +172,53 @@ describe("useFavorites - User Behaviors", () => {
     });
   });
 
-  describe("Favorites State Persistence", () => {
-    it("should maintain filter state during refresh", async () => {
-      const { result } = renderHook(() => useFavorites());
+  describe("URL Changes", () => {
+    it("should reload favorites when URL changes", async () => {
+      vi.mocked(favoritesManager.getFavorites).mockResolvedValue([mockFavorites[0]]);
 
-      act(() => {
-        result.current.setShowFavoritesOnly(true);
-      });
-
-      vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
-
-      await act(async () => {
-        await result.current.refreshFavorites();
-      });
-
-      expect(result.current.showFavoritesOnly).toBe(true);
-    });
-
-    it("should maintain favorites list during filter toggle", async () => {
-      vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
-
-      const { result } = renderHook(() => useFavorites());
+      const { result, rerender } = renderHook(
+        ({ url }) => useFavorites(url),
+        { initialProps: { url: mockUrl } }
+      );
 
       await waitFor(() => {
-        expect(result.current.favorites).toEqual(mockFavorites);
+        expect(result.current.favoritesCount).toBe(1);
       });
 
-      act(() => {
-        result.current.toggleShowFavoritesOnly();
+      vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
+      const newUrl = "https://capitaloneoffers.com/c1-offers";
+
+      rerender({ url: newUrl });
+
+      await waitFor(() => {
+        expect(favoritesManager.getFavorites).toHaveBeenCalledWith(newUrl);
       });
 
-      expect(result.current.favorites).toEqual(mockFavorites);
+      await waitFor(() => {
+        expect(result.current.favoritesCount).toBe(2);
+      });
+    });
 
-      act(() => {
-        result.current.toggleShowFavoritesOnly();
+    it("should not reload when URL changes to null", async () => {
+      vi.mocked(favoritesManager.getFavorites).mockResolvedValue([mockFavorites[0]]);
+
+      const { result, rerender } = renderHook(
+        ({ url }) => useFavorites(url),
+        { initialProps: { url: mockUrl } }
+      );
+
+      await waitFor(() => {
+        expect(result.current.favoritesCount).toBe(1);
       });
 
-      expect(result.current.favorites).toEqual(mockFavorites);
+      const callCount = vi.mocked(favoritesManager.getFavorites).mock.calls.length;
+
+      rerender({ url: null });
+
+      // Wait a bit to ensure no new calls happen
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(vi.mocked(favoritesManager.getFavorites).mock.calls.length).toBe(callCount);
     });
   });
 
@@ -256,7 +226,7 @@ describe("useFavorites - User Behaviors", () => {
     it("should handle refresh with no changes", async () => {
       vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
 
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       await waitFor(() => {
         expect(result.current.favoritesCount).toBe(2);
@@ -271,7 +241,7 @@ describe("useFavorites - User Behaviors", () => {
     });
 
     it("should handle multiple rapid refreshes", async () => {
-      const { result } = renderHook(() => useFavorites());
+      const { result } = renderHook(() => useFavorites(mockUrl));
 
       vi.mocked(favoritesManager.getFavorites).mockResolvedValue(mockFavorites);
 
@@ -284,6 +254,16 @@ describe("useFavorites - User Behaviors", () => {
       });
 
       expect(result.current.favoritesCount).toBe(2);
+    });
+
+    it("should not refresh when URL is null", async () => {
+      const { result } = renderHook(() => useFavorites(null));
+
+      await act(async () => {
+        await result.current.refreshFavorites();
+      });
+
+      expect(favoritesManager.getFavorites).not.toHaveBeenCalled();
     });
   });
 });

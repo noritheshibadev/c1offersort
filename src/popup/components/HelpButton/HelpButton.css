@@ -15,6 +15,7 @@
   font-size: 12px;
   font-weight: 600;
   transition: all 0.2s ease;
+  z-index: 1001;
 }
 
 .help-button:hover {
@@ -24,10 +25,9 @@
 }
 
 .help-tooltip {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 8px;
+  position: fixed;
+  top: 36px;
+  right: 8px;
   background: rgba(0, 0, 0, 0.9);
   color: white;
   padding: 8px 12px;
@@ -38,7 +38,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
-  z-index: 1000;
+  z-index: 1002;
 }
 
 .help-tooltip::before {

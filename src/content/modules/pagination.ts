@@ -50,13 +50,23 @@ async function executePaginationInPageContext(): Promise<number> {
   console.log('[Pagination] Injecting pagination script into page context...');
 
   return new Promise((resolve) => {
-    let checkResult: ReturnType<typeof setInterval> | null = null;
+    let progressObserver: MutationObserver | null = null;
+    let resultObserver: MutationObserver | null = null;
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-    // Consolidated cleanup function for intervals and DOM elements
+    // Consolidated cleanup function for observers and DOM elements
     const cleanup = () => {
-      if (checkResult !== null) {
-        clearInterval(checkResult);
-        checkResult = null;
+      if (progressObserver) {
+        progressObserver.disconnect();
+        progressObserver = null;
+      }
+      if (resultObserver) {
+        resultObserver.disconnect();
+        resultObserver = null;
+      }
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+        timeoutHandle = null;
       }
     };
 
@@ -87,28 +97,60 @@ async function executePaginationInPageContext(): Promise<number> {
       document.body.appendChild(layoutInfo);
       console.log('[Pagination] Injected selector info for pagination');
 
-      const script = document.createElement('script');
-      script.src = chrome.runtime.getURL('injected-scripts/pagination.js');
-      script.onload = () => {
-        console.log('[Pagination] Script loaded, waiting for completion...');
-        script.remove();
+      // Set up MutationObserver for progress updates
+      let lastProgressTimestamp = 0;
+      progressObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node instanceof HTMLElement && node.id === 'c1-pagination-progress') {
+              const timestamp = node.getAttribute('data-timestamp');
+              if (timestamp && timestamp !== lastProgressTimestamp.toString()) {
+                lastProgressTimestamp = parseInt(timestamp);
+                const progress = parsePaginationProgress(node);
 
-        let attempts = 0;
-        const maxWaitAttempts = 480; // 4 minutes with 500ms polling (balanced for reliability)
-        let lastProgressTimestamp = 0;
+                if (progress) {
+                  console.log('[Pagination] Progress update:', progress.offersLoaded, 'offers,', progress.pagesLoaded, 'pages');
 
-        checkResult = setInterval(() => {
-          console.log('[Pagination] Polling for result... attempt', attempts);
+                  if (progressState.sort.isActive) {
+                    progressState.sort.progress = {
+                      type: 'pagination',
+                      offersLoaded: progress.offersLoaded,
+                      pagesLoaded: progress.pagesLoaded,
+                    };
+                  } else if (progressState.filter.isActive) {
+                    progressState.filter.progress = {
+                      offersLoaded: progress.offersLoaded,
+                      pagesLoaded: progress.pagesLoaded,
+                    };
+                  }
 
-          const progressElement = document.getElementById('c1-pagination-progress');
-          if (progressElement) {
-            const timestamp = progressElement.getAttribute('data-timestamp');
+                  try {
+                    chrome.runtime.sendMessage({
+                      type: "PAGINATION_PROGRESS",
+                      offersLoaded: progress.offersLoaded,
+                      pagesLoaded: progress.pagesLoaded,
+                    }).catch((err) => {
+                      console.log('[Pagination] Failed to send progress message:', err);
+                    });
+                  } catch (error) {
+                    console.log('[Pagination] Error sending progress:', error);
+                  }
+                }
+              }
+            }
+          }
+
+          // Check for attribute changes on existing progress element
+          if (mutation.type === 'attributes' &&
+              mutation.target instanceof HTMLElement &&
+              mutation.target.id === 'c1-pagination-progress') {
+            const timestamp = mutation.target.getAttribute('data-timestamp');
             if (timestamp && timestamp !== lastProgressTimestamp.toString()) {
               lastProgressTimestamp = parseInt(timestamp);
-              const progress = parsePaginationProgress(progressElement);
+              const progress = parsePaginationProgress(mutation.target);
 
               if (progress) {
-                console.log('[Pagination] Sending progress update:', progress.offersLoaded, 'offers,', progress.pagesLoaded, 'pages');
+                console.log('[Pagination] Progress update (attr):', progress.offersLoaded, 'offers,', progress.pagesLoaded, 'pages');
 
                 if (progressState.sort.isActive) {
                   progressState.sort.progress = {
@@ -137,28 +179,49 @@ async function executePaginationInPageContext(): Promise<number> {
               }
             }
           }
+        }
+      });
 
-          const resultElement = document.getElementById('c1-pagination-result');
-          console.log('[Pagination] Checking for result element:', resultElement);
+      // Watch for progress element creation and updates
+      progressObserver.observe(document.body, {
+        childList: true,
+        attributes: true,
+        attributeFilter: ['data-timestamp'],
+        subtree: true
+      });
 
-          if (resultElement) {
-            cleanup();
-            const result = parsePaginationResult(resultElement);
-            console.log('[Pagination] Pagination complete, pages loaded:', result.pagesLoaded);
-
-            cleanupDOMElements();
-            resolve(result.pagesLoaded);
-            return;
+      // Set up MutationObserver for result
+      resultObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node instanceof HTMLElement && node.id === 'c1-pagination-result') {
+              cleanup();
+              const result = parsePaginationResult(node);
+              console.log('[Pagination] Pagination complete, pages loaded:', result.pagesLoaded);
+              cleanupDOMElements();
+              resolve(result.pagesLoaded);
+              return;
+            }
           }
+        }
+      });
 
-          attempts++;
-          if (attempts >= maxWaitAttempts) {
-            cleanup();
-            console.warn('[Pagination] Timeout waiting for pagination result');
-            cleanupDOMElements();
-            resolve(0);
-          }
-        }, 500); // Reduced from 250ms to 500ms (50% fewer polls)
+      // Watch for result element creation
+      resultObserver.observe(document.body, { childList: true, subtree: true });
+
+      // Timeout fallback (4 minutes)
+      timeoutHandle = setTimeout(() => {
+        cleanup();
+        console.warn('[Pagination] Timeout waiting for pagination result');
+        cleanupDOMElements();
+        resolve(0);
+      }, 240000);
+
+      const script = document.createElement('script');
+      script.src = chrome.runtime.getURL('injected-scripts/pagination.js');
+      script.onload = () => {
+        console.log('[Pagination] Script loaded, waiting for completion...');
+        script.remove();
       };
 
       script.onerror = (error) => {

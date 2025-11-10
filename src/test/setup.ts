@@ -34,7 +34,8 @@ globalThis.chrome = {
     },
   },
   tabs: {
-    query: vi.fn(),
+    query: vi.fn().mockResolvedValue([{ id: 1, url: 'https://capitaloneoffers.com/feed' }]),
+    sendMessage: vi.fn().mockResolvedValue({ isActive: false }),
   },
   scripting: {
     executeScript: vi.fn(),

@@ -28,7 +28,7 @@ export class MessageBus {
   static async sendToTab<T extends ExtensionMessage>(
     tabId: number,
     message: T,
-    retries = 2
+    retries = 5
   ): Promise<unknown> {
     let lastError: Error | undefined;
 
@@ -43,8 +43,10 @@ export class MessageBus {
                                    lastError.message.includes('Receiving end does not exist');
 
         if (isConnectionError && attempt < retries) {
-          console.warn(`[MessageBus] Connection attempt ${attempt + 1} failed, retrying in 100ms...`);
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Use exponential backoff: 50ms, 100ms, 200ms, 400ms, 800ms
+          const delay = 50 * Math.pow(2, attempt);
+          console.warn(`[MessageBus] Connection attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
 

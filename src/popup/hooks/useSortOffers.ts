@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import type { SortConfig, SortResult } from "../../types";
 import { executeSortInActiveTab, getCurrentTab } from "../services/chromeApi";
 import { isValidCapitalOneUrl } from "../../utils/typeGuards";
 import { isSortingError } from "../../utils/errors";
+import { throttle } from "@/utils/throttle";
 
 interface ProgressUpdate {
   type: "pagination" | "sorting";
@@ -42,7 +43,14 @@ export function useSortOffers(): UseSortOffersResult {
   });
   const [lastResult, setLastResult] = useState<SortResult | null>(null);
   const [progressUpdate, setProgressUpdate] = useState<ProgressUpdate | null>(null);
-  const lastUpdateTimeRef = useRef<number>(0);
+
+  // Create throttled setter (stable across renders)
+  const throttledSetProgress = useMemo(
+    () => throttle((update: ProgressUpdate) => {
+      setProgressUpdate(update);
+    }, 200),
+    []
+  );
 
   useEffect(() => {
     async function queryProgress() {
@@ -100,18 +108,15 @@ export function useSortOffers(): UseSortOffersResult {
         totalOffers?: number;
       };
 
-      const now = Date.now();
-      const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
-
       if (msg.type === "PAGINATION_PROGRESS") {
-        if (timeSinceLastUpdate < 200) return;
         if (typeof msg.offersLoaded !== "number" || typeof msg.pagesLoaded !== "number") {
           return;
         }
 
         console.log('[useSortOffers] Received pagination progress:', msg.offersLoaded, 'offers,', msg.pagesLoaded, 'pages');
-        lastUpdateTimeRef.current = now;
-        setProgressUpdateRef.current({
+
+        // Use throttled setter
+        throttledSetProgress({
           type: "pagination",
           offersLoaded: msg.offersLoaded,
           pagesLoaded: msg.pagesLoaded,
@@ -122,7 +127,7 @@ export function useSortOffers(): UseSortOffersResult {
         }
 
         console.log('[useSortOffers] Received sorting start:', msg.totalOffers, 'offers');
-        setProgressUpdateRef.current({
+        throttledSetProgress({
           type: "sorting",
           totalOffers: msg.totalOffers,
         });
@@ -144,7 +149,7 @@ export function useSortOffers(): UseSortOffersResult {
         console.log('[useSortOffers] Failed to remove message listener (extension context may be invalidated):', error);
       }
     };
-  }, []);
+  }, [throttledSetProgress]);
 
   const handleSort = useCallback(async () => {
     console.log('[useSortOffers] handleSort called with config:', sortConfig);

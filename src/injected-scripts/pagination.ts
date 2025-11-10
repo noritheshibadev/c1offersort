@@ -26,29 +26,18 @@
   const layoutName = layoutInfoElement?.getAttribute('data-layout-name') || 'unknown';
   const layoutVersion = layoutInfoElement?.getAttribute('data-layout-version') || 'unknown';
   const viewMoreSelector = layoutInfoElement?.getAttribute('data-view-more-selector') || '';
-  const tileSelector = layoutInfoElement?.getAttribute('data-tile-selector') || '';
-  const containerSelector = layoutInfoElement?.getAttribute('data-container-selector') || '';
 
   console.log('[Pagination Injected] Using layout:', layoutName, layoutVersion);
   if (viewMoreSelector) {
     console.log('[Pagination Injected] View More button selector:', viewMoreSelector);
   }
-  if (tileSelector) {
-    console.log('[Pagination Injected] Tile selector:', tileSelector);
-  }
 
+  /**
+   * NOTE: This function is duplicated from shared/domHelpers.ts
+   * REASON: This script runs in page context and cannot import modules
+   * KEEP IN SYNC: If you update domHelpers.countRealTiles(), update this too
+   */
   function countRealTiles(): number {
-    // Try layout-specific selector first
-    if (tileSelector && containerSelector) {
-      const container = document.querySelector(containerSelector);
-      if (container) {
-        const tiles = container.querySelectorAll(tileSelector);
-        console.log('[Pagination Injected] Counted', tiles.length, 'tiles using layout selector');
-        return tiles.length;
-      }
-    }
-
-    // Fallback: use data-testid (legacy method)
     const allTiles = document.querySelectorAll('[data-testid^="feed-tile-"]');
     let count = 0;
     for (const tile of allTiles) {
@@ -57,7 +46,6 @@
         count++;
       }
     }
-    console.log('[Pagination Injected] Counted', count, 'tiles using fallback data-testid method');
     return count;
   }
 

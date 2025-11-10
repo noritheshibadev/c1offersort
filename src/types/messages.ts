@@ -48,6 +48,15 @@ export interface SortCompleteMessage {
   };
 }
 
+export interface ViewModeRequestMessage {
+  type: "VIEW_MODE_REQUEST";
+  viewMode: "grid" | "table";
+}
+
+export interface GetViewModeMessage {
+  type: "GET_VIEW_MODE";
+}
+
 export type ExtensionMessage =
   | PaginationProgressMessage
   | SortingStartMessage
@@ -56,5 +65,7 @@ export type ExtensionMessage =
   | InjectFavoritesRequestMessage
   | RemoveFavoritesRequestMessage
   | UpdateStarStateMessage
-  | SortCompleteMessage;
+  | SortCompleteMessage
+  | ViewModeRequestMessage
+  | GetViewModeMessage;
 

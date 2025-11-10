@@ -43,7 +43,7 @@ describe("favoritesManager", () => {
         { ...mockOffer, favoritedAt: Date.now() },
       ];
       vi.mocked(chrome.storage.local.get).mockResolvedValue({
-        "c1-offers-favorites": mockFavorites,
+        "c1-offers-favorites-feed": mockFavorites,
       });
 
       const result = await getFavorites();
@@ -53,7 +53,7 @@ describe("favoritesManager", () => {
 
     it("throws error when favorites data is not an array", async () => {
       vi.mocked(chrome.storage.local.get).mockResolvedValue({
-        "c1-offers-favorites": "invalid data",
+        "c1-offers-favorites-feed": "invalid data",
       });
 
       await expect(getFavorites()).rejects.toThrow(FavoritesError);
@@ -76,13 +76,13 @@ describe("favoritesManager", () => {
       vi.mocked(chrome.storage.local.get)
         .mockResolvedValueOnce({}) // Initial read
         .mockResolvedValueOnce({ // Verification read
-          "c1-offers-favorites": [{ ...mockOffer, favoritedAt: expect.any(Number) }],
+          "c1-offers-favorites-feed": [{ ...mockOffer, favoritedAt: expect.any(Number) }],
         });
 
       await addFavorite(mockOffer);
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        "c1-offers-favorites": [expect.objectContaining({
+        "c1-offers-favorites-feed": [expect.objectContaining({
           merchantName: "Hilton",
           merchantTLD: "hilton.com",
           mileageValue: "10X miles",
@@ -96,7 +96,7 @@ describe("favoritesManager", () => {
         { ...mockOffer, favoritedAt: Date.now() },
       ];
       vi.mocked(chrome.storage.local.get).mockResolvedValue({
-        "c1-offers-favorites": existing,
+        "c1-offers-favorites-feed": existing,
       });
 
       await addFavorite(mockOffer);
@@ -108,7 +108,7 @@ describe("favoritesManager", () => {
       vi.mocked(chrome.storage.local.get)
         .mockResolvedValueOnce({}) // Initial read
         .mockResolvedValueOnce({ // Verification read
-          "c1-offers-favorites": [{ ...mockOffer, favoritedAt: Date.now() }],
+          "c1-offers-favorites-feed": [{ ...mockOffer, favoritedAt: Date.now() }],
         });
 
       const beforeTime = Date.now();
@@ -116,7 +116,7 @@ describe("favoritesManager", () => {
       const afterTime = Date.now();
 
       const calls = vi.mocked(chrome.storage.local.set).mock.calls;
-      const savedFavorites = calls[0][0]["c1-offers-favorites"] as FavoritedOffer[];
+      const savedFavorites = calls[0][0]["c1-offers-favorites-feed"] as FavoritedOffer[];
       const timestamp = savedFavorites[0].favoritedAt;
 
       expect(timestamp).toBeGreaterThanOrEqual(beforeTime);
@@ -132,7 +132,7 @@ describe("favoritesManager", () => {
       }));
 
       vi.mocked(chrome.storage.local.get).mockResolvedValue({
-        "c1-offers-favorites": manyFavorites,
+        "c1-offers-favorites-feed": manyFavorites,
       });
 
       await expect(
@@ -161,13 +161,13 @@ describe("favoritesManager", () => {
       ];
 
       vi.mocked(chrome.storage.local.get)
-        .mockResolvedValueOnce({ "c1-offers-favorites": favorites }) // Initial read
-        .mockResolvedValueOnce({ "c1-offers-favorites": [favorites[1]] }); // Verification
+        .mockResolvedValueOnce({ "c1-offers-favorites-feed": favorites }) // Initial read
+        .mockResolvedValueOnce({ "c1-offers-favorites-feed": [favorites[1]] }); // Verification
 
       await removeFavorite("hilton.com");
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        "c1-offers-favorites": [favorites[1]],
+        "c1-offers-favorites-feed": [favorites[1]],
       });
     });
 
@@ -177,7 +177,7 @@ describe("favoritesManager", () => {
       ];
 
       vi.mocked(chrome.storage.local.get).mockResolvedValue({
-        "c1-offers-favorites": favorites,
+        "c1-offers-favorites-feed": favorites,
       });
 
       await removeFavorite("nonexistent.com");
@@ -192,7 +192,7 @@ describe("favoritesManager", () => {
         .mockResolvedValueOnce({}) // isFavorited check
         .mockResolvedValueOnce({}) // addFavorite read
         .mockResolvedValueOnce({ // addFavorite verification
-          "c1-offers-favorites": [{ ...mockOffer, favoritedAt: Date.now() }],
+          "c1-offers-favorites-feed": [{ ...mockOffer, favoritedAt: Date.now() }],
         });
 
       const result = await toggleFavorite(mockOffer);
@@ -207,15 +207,15 @@ describe("favoritesManager", () => {
       ];
 
       vi.mocked(chrome.storage.local.get)
-        .mockResolvedValueOnce({ "c1-offers-favorites": favorites }) // isFavorited check
-        .mockResolvedValueOnce({ "c1-offers-favorites": favorites }) // removeFavorite read
-        .mockResolvedValueOnce({ "c1-offers-favorites": [] }); // verification
+        .mockResolvedValueOnce({ "c1-offers-favorites-feed": favorites }) // isFavorited check
+        .mockResolvedValueOnce({ "c1-offers-favorites-feed": favorites }) // removeFavorite read
+        .mockResolvedValueOnce({ "c1-offers-favorites-feed": [] }); // verification
 
       const result = await toggleFavorite(mockOffer);
 
       expect(result).toBe(false);
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        "c1-offers-favorites": [],
+        "c1-offers-favorites-feed": [],
       });
     });
   });
@@ -227,7 +227,7 @@ describe("favoritesManager", () => {
       ];
 
       vi.mocked(chrome.storage.local.get).mockResolvedValue({
-        "c1-offers-favorites": favorites,
+        "c1-offers-favorites-feed": favorites,
       });
 
       const result = await isFavorited("hilton.com");
@@ -255,7 +255,7 @@ describe("favoritesManager", () => {
       vi.mocked(chrome.storage.local.get)
         .mockResolvedValueOnce({}) // Initial read
         .mockResolvedValueOnce({ // Verification
-          "c1-offers-favorites": [{ ...longOffer, favoritedAt: Date.now() }],
+          "c1-offers-favorites-feed": [{ ...longOffer, favoritedAt: Date.now() }],
         });
 
       await addFavorite(longOffer);
@@ -273,7 +273,7 @@ describe("favoritesManager", () => {
       vi.mocked(chrome.storage.local.get)
         .mockResolvedValueOnce({}) // Initial read
         .mockResolvedValueOnce({ // Verification
-          "c1-offers-favorites": [{ ...specialOffer, favoritedAt: Date.now() }],
+          "c1-offers-favorites-feed": [{ ...specialOffer, favoritedAt: Date.now() }],
         });
 
       await addFavorite(specialOffer);
@@ -281,7 +281,7 @@ describe("favoritesManager", () => {
       // Verify the offer was saved (implementation will handle escaping)
       expect(chrome.storage.local.set).toHaveBeenCalled();
       const savedData = vi.mocked(chrome.storage.local.set).mock.calls[0][0];
-      expect(savedData["c1-offers-favorites"][0].merchantName).toBe("Test & Co. <script>");
+      expect(savedData["c1-offers-favorites-feed"][0].merchantName).toBe("Test & Co. <script>");
     });
 
     it("handles empty mileageValue", async () => {
@@ -294,7 +294,7 @@ describe("favoritesManager", () => {
       vi.mocked(chrome.storage.local.get)
         .mockResolvedValueOnce({}) // Initial read
         .mockResolvedValueOnce({ // Verification
-          "c1-offers-favorites": [{ ...emptyMileageOffer, favoritedAt: Date.now() }],
+          "c1-offers-favorites-feed": [{ ...emptyMileageOffer, favoritedAt: Date.now() }],
         });
 
       await addFavorite(emptyMileageOffer);
@@ -314,7 +314,7 @@ describe("favoritesManager", () => {
       }));
 
       vi.mocked(chrome.storage.local.get).mockResolvedValue({
-        "c1-offers-favorites": largeFavorites,
+        "c1-offers-favorites-feed": largeFavorites,
       });
 
       await expect(

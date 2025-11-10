@@ -1,6 +1,6 @@
 {
   "name": "c1-offers-sorter",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "A Chrome extension to sort Capital One shopping offers by mileage value",
   "type": "module",
   "scripts": {
@@ -29,6 +29,7 @@
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "4.0.6",
     "@vitest/ui": "^4.0.4",
     "happy-dom": "^20.0.8",
     "terser": "^5.44.0",

@@ -14,11 +14,13 @@ import { getWatcherCleanup } from '../../index';
  *
  * @param showFavoritesOnly - If true, show only favorited offers; if false, show all
  * @param fullyPaginated - Reference to track if pagination is complete
+ * @param skipPagination - If true, skip pagination (used when called during sort/refresh operations)
  * @returns Result with success status, tile counts, and list of favorites not currently visible
  */
 export async function applyFavoritesFilter(
   showFavoritesOnly: boolean,
-  fullyPaginated: { value: boolean }
+  fullyPaginated: { value: boolean },
+  skipPagination: boolean = false
 ): Promise<{
   success: boolean;
   tilesShown: number;
@@ -27,7 +29,10 @@ export async function applyFavoritesFilter(
   error?: string;
 }> {
   try {
-    if (showFavoritesOnly) {
+    // Store filter state so we can re-apply it after sorting/table view changes
+    await chrome.storage.local.set({ 'c1-favorites-filter-active': showFavoritesOnly });
+
+    if (showFavoritesOnly && !skipPagination) {
       await loadAllTiles(fullyPaginated);
 
       const watcherCleanup = getWatcherCleanup();
@@ -36,6 +41,10 @@ export async function applyFavoritesFilter(
         watcherCleanup.disableObserverOnly();
       }
     }
+    // Note: Watcher is not re-enabled when turning off filter because:
+    // 1. The watcher's storage change listener will re-enable if favorites are toggled off/on
+    // 2. Re-enabling mid-operation could cause duplicate star injection
+    // 3. The watcher was only disabled to prevent mutation events during tile manipulation
 
     const favorites = await getFavorites();
     const favoritedTLDs = new Set(favorites.map((fav) => fav.merchantTLD));
@@ -75,6 +84,13 @@ export async function applyFavoritesFilter(
         (tile as HTMLElement).style.removeProperty('order');
         shownCount++;
       }
+    }
+
+    // Reset container grid properties when turning off the filter
+    if (mainContainer && !showFavoritesOnly) {
+      mainContainer.style.removeProperty('display');
+      mainContainer.style.removeProperty('grid-template-areas');
+      mainContainer.style.removeProperty('grid-auto-flow');
     }
 
     if (showFavoritesOnly) {

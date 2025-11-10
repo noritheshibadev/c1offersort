@@ -123,11 +123,21 @@ export async function injectStarsIntoTiles(
 ): Promise<void> {
   setupStarEventDelegation();
 
+  // Apply content-visibility to all tiles upfront for better rendering performance
+  tiles.forEach(tile => {
+    tile.style.contentVisibility = 'auto';
+    tile.style.containIntrinsicSize = 'auto 200px';
+  });
+
   // Use cached favorites to reduce chrome.storage calls (10s TTL)
   const favorites = await getCachedFavorites();
   const favoritedTLDs = new Set(favorites.map((fav: Favorite) => fav.merchantTLD));
 
-  if (useIntersectionObserver && tiles.length > 50) {
+  // Check if we're in table view - if so, force synchronous injection
+  // because tiles are hidden and IntersectionObserver won't work
+  const isTableView = !!document.getElementById('c1-offers-table-container');
+
+  if (useIntersectionObserver && tiles.length > 50 && !isTableView) {
     console.log('[Favorites] Using Intersection Observer for lazy star injection on', tiles.length, 'tiles');
 
     if (!starInjectionObserver) {
@@ -278,8 +288,10 @@ export async function injectFavorites(
     }
 
     const tiles = findAllTiles();
+    console.log('[Favorites] Found tiles for injection:', tiles.length, 'First tile testid:', tiles[0]?.getAttribute('data-testid'));
 
     const tilesWithStars = tiles.filter(tile => tile.querySelector('.c1-favorite-star'));
+    console.log('[Favorites] Tiles already with stars:', tilesWithStars.length);
     if (tilesWithStars.length > 0 && tilesWithStars.length === tiles.length) {
       return {
         success: true,
@@ -288,6 +300,7 @@ export async function injectFavorites(
     }
 
     await injectStarsIntoTiles(tiles as HTMLElement[]);
+    console.log('[Favorites] Finished injecting stars');
 
     const observer = new MutationObserver(async (mutations) => {
       const newTiles: HTMLElement[] = [];

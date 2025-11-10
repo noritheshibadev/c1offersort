@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react';
 import type { FavoritedOffer } from "@/types";
 import { removeFavorite } from "@/utils/favoritesManager";
 import "./FavoritesList.css";
@@ -7,15 +8,17 @@ interface FavoritesListProps {
   missingFavorites: string[];
   onRemove: () => void;
   currentUrl: string | null;
+  disabled?: boolean;
 }
 
-export const FavoritesList = ({
+export const FavoritesList = React.memo(({
   favorites,
   missingFavorites,
   onRemove,
   currentUrl,
+  disabled = false,
 }: FavoritesListProps) => {
-  const handleRemove = async (merchantTLD: string) => {
+  const handleRemove = useCallback(async (merchantTLD: string) => {
     try {
       await removeFavorite(merchantTLD, currentUrl || undefined);
 
@@ -33,7 +36,7 @@ export const FavoritesList = ({
     } catch (error) {
       console.error("[Favorites] Failed to remove:", error);
     }
-  };
+  }, [currentUrl, onRemove]);
 
   if (favorites.length === 0) {
     return null;
@@ -63,6 +66,7 @@ export const FavoritesList = ({
               <button
                 className="favorite-remove-btn"
                 onClick={() => handleRemove(favorite.merchantTLD)}
+                disabled={disabled}
                 title="Remove from favorites"
               >
                 ×
@@ -73,4 +77,11 @@ export const FavoritesList = ({
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if these actually changed
+  return prevProps.favorites === nextProps.favorites &&
+         prevProps.missingFavorites === nextProps.missingFavorites &&
+         prevProps.currentUrl === nextProps.currentUrl;
+});
+
+FavoritesList.displayName = 'FavoritesList';

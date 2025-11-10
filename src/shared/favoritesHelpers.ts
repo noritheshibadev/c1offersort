@@ -5,6 +5,16 @@ const STORAGE_KEY_C1OFFERS = "c1-offers-favorites-c1offers";
 const MAX_FAVORITES = 1000;
 const MAX_STORAGE_SIZE = 1000000;
 
+// Debounced save state
+interface SaveQueueItem {
+  favorites: Favorite[];
+  resolve: () => void;
+  reject: (error: Error) => void;
+}
+
+let saveQueue: SaveQueueItem | null = null;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Determines the storage key based on the current URL
  * /feed and /c1-offers have separate favorites storage
@@ -66,29 +76,75 @@ export async function getFavorites(): Promise<Favorite[]> {
   }
 }
 
-export async function saveFavorites(favorites: Favorite[]): Promise<void> {
+/**
+ * Internal function that performs the actual storage write
+ */
+async function executeSave(item: SaveQueueItem): Promise<void> {
   try {
-    if (favorites.length > MAX_FAVORITES) {
+    if (item.favorites.length > MAX_FAVORITES) {
       throw new Error(`Favorites limit exceeded (max ${MAX_FAVORITES})`);
     }
 
-    const serialized = JSON.stringify(favorites);
+    const serialized = JSON.stringify(item.favorites);
     if (serialized.length > MAX_STORAGE_SIZE) {
       throw new Error('Favorites storage too large');
     }
 
     const storageKey = getStorageKey();
-    const success = await safeStorageSet({ [storageKey]: favorites });
+    const success = await safeStorageSet({ [storageKey]: item.favorites });
     if (!success) {
       console.warn('[Favorites] Save skipped - extension context invalidated');
     }
+    item.resolve();
   } catch (error) {
     if (isContextInvalidatedError(error)) {
       console.warn('[Favorites] Extension context invalidated during save');
+      item.resolve(); // Don't reject on context errors
       return;
     }
     console.error('[Favorites] Save failed:', error);
-    throw error;
+    item.reject(error instanceof Error ? error : new Error(String(error)));
+  }
+}
+
+/**
+ * Debounced save favorites - waits 100ms after last change before writing
+ */
+export async function saveFavorites(favorites: Favorite[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // Update queue with latest data
+    saveQueue = { favorites, resolve, reject };
+
+    // Clear existing timer
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+
+    // Schedule save for 100ms after last change
+    saveTimer = setTimeout(() => {
+      if (saveQueue) {
+        const item = saveQueue;
+        saveQueue = null;
+        saveTimer = null;
+        executeSave(item);
+      }
+    }, 100);
+  });
+}
+
+/**
+ * Flush pending saves immediately (e.g., on extension unload)
+ */
+export async function flushFavoritesSave(): Promise<void> {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+
+  if (saveQueue) {
+    const item = saveQueue;
+    saveQueue = null;
+    await executeSave(item);
   }
 }
 
@@ -165,7 +221,8 @@ export function createStarButton(
   button.className = "c1-favorite-star";
   button.textContent = isInitiallyFavorited ? "★" : "☆";
 
-  // Store data for event delegation
+  // Store data for event delegation and table view identification
+  button.setAttribute("data-c1-favorite-star", "true");
   button.setAttribute("data-merchant-tld", merchantTLD);
   button.setAttribute("data-merchant-name", merchantName);
   button.setAttribute("data-favorited", isInitiallyFavorited ? "true" : "false");

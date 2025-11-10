@@ -1,0 +1,49 @@
+/* App Layout Structure */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  max-height: 600px;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header */
+.app-header {
+  flex-shrink: 0;
+  padding: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+
+.app-title {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+/* Scrollable Content Area */
+.app-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+/* Main Content */
+.app-content {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* Footer (Fixed at bottom) */
+.app-footer {
+  flex-shrink: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-background);
+}

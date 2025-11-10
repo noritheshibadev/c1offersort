@@ -5,6 +5,7 @@ import { SELECTORS } from '@/utils/constants';
 
 const ENABLED_KEY = "c1-favorites-enabled";
 const ENABLED_CACHE_TTL = 10000; // Cache enabled state for 10 seconds (increased for better performance)
+const TILE_SCAN_INTERVALS = [100, 300, 700, 1500, 1000, 1000, 1000, 1000]; // Scan timings optimized for slow-loading pages
 
 /**
  * Sets up a MutationObserver to watch for new tiles being added to the page
@@ -39,16 +40,12 @@ export function setupTilesWatcher(
   const scanForInitialTiles = async () => {
     try {
       const enabled = await isEnabled();
-      console.log('[Favorites Watcher] Initial scan - Favorites enabled:', enabled, 'URL:', window.location.href);
       if (!enabled) {
-        console.log('[Favorites Watcher] Favorites disabled, skipping initial scan');
         return;
       }
 
-      // Increased scan attempts and delays to handle slow-loading pages (especially /feed)
-      // /feed shows skeleton tiles for ~3-7 seconds before real tiles appear
-      // Front-load scans in the 3-7s window to catch real tiles sooner
-      const scanIntervals = [100, 300, 700, 1500, 1000, 1000, 1000, 1000];
+      // Scan at configured intervals to handle slow-loading pages (especially /feed)
+      const scanIntervals = TILE_SCAN_INTERVALS;
       let cumulativeTime = 0;
 
       for (const interval of scanIntervals) {
@@ -63,29 +60,18 @@ export function setupTilesWatcher(
 
             // Suppress warning during initial scans - tiles may not be loaded yet
             const allTiles = findAllTiles(true);
-            console.log(`[Favorites Watcher] Scan at ${cumulativeTime}ms - Found ${allTiles.length} tiles`);
-
             const tilesToProcess: HTMLElement[] = [];
-            let alreadyProcessedCount = 0;
-            let excludedCount = 0;
 
             for (const tile of allTiles) {
-              const isProcessed = processedTiles.has(tile);
-              const shouldExclude = shouldExcludeTile(tile);
-              const testId = tile.getAttribute('data-testid') || 'no-testid';
+              if (!processedTiles.has(tile) && !shouldExcludeTile(tile)) {
+                // Apply content-visibility optimization early
+                tile.style.contentVisibility = 'auto';
+                tile.style.containIntrinsicSize = 'auto 200px';
 
-              if (isProcessed) {
-                alreadyProcessedCount++;
-              } else if (shouldExclude) {
-                excludedCount++;
-                console.log(`[Favorites Watcher] Excluding tile - testid: ${testId.substring(0, 50)}`);
-              } else {
                 tilesToProcess.push(tile);
                 processedTiles.set(tile, true); // WeakMap auto-GC
               }
             }
-
-            console.log(`[Favorites Watcher] Tile filtering - Total: ${allTiles.length}, ToProcess: ${tilesToProcess.length}, AlreadyProcessed: ${alreadyProcessedCount}, Excluded: ${excludedCount}`);
 
             if (tilesToProcess.length > 0) {
               await injectStarsIntoTiles(tilesToProcess);
@@ -174,7 +160,11 @@ export function setupTilesWatcher(
 
         if (tilesToProcess.length > 0) {
           console.log(`[Favorites Watcher] Mutation detected - Processing ${tilesToProcess.length} new tiles, Excluded: ${mutationExcludedCount}, AlreadyProcessed: ${mutationProcessedCount}`);
+          // Preserve scroll position during star injection to prevent unwanted scroll-to-top
+          const scrollX = window.scrollX;
+          const scrollY = window.scrollY;
           await injectStarsIntoTiles(tilesToProcess);
+          window.scrollTo(scrollX, scrollY);
         }
 
         debounceTimer = null;

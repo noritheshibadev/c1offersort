@@ -1,5 +1,6 @@
-export type SortCriteria = "mileage" | "alphabetical";
-export type SortOrder = "desc" | "asc";
+export type SortCriteria = "mileage" | "alphabetical" | "merchantMileage";
+export type SortOrder = "desc" | "asc" | "desc-asc" | "desc-desc" | "asc-asc" | "asc-desc";
+export type ViewMode = "grid" | "table";
 
 export interface SortConfig {
   criteria: SortCriteria;
