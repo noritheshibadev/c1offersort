@@ -129,6 +129,13 @@ yarn build
 3. Click "Load unpacked"
 4. Select the `dist` folder from the project
 
+### Load in FireFox
+
+1. Navigate to `about:debugging`
+2. Click "This Firefox" (in the sidebar)
+3. Click "Load temporary Add-on..."
+4. Select `manifest.json` from the `dist` folder of the project
+
 ## Contributing
 
 Contributions are welcome! To contribute:

@@ -10,7 +10,8 @@
     "default_title": "C1 Offers Sorter"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
   },
   "content_scripts": [
     {
@@ -36,6 +37,12 @@
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "c1offersort@noritheshibadev.com",
+      "strict_min_version": "109.0"
+    }
   },
   "homepage_url": "https://github.com/noritheshibadev/c1offersort"
 }
