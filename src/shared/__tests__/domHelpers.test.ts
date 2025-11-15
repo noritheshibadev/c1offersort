@@ -17,7 +17,9 @@ describe("domHelpers - Pure Utility Functions", () => {
     });
 
     it("handles multi-word domains", () => {
-      expect(domainToDisplayName("cumberlandfarms.com")).toBe("Cumberlandfarms");
+      expect(domainToDisplayName("cumberlandfarms.com")).toBe(
+        "Cumberlandfarms"
+      );
     });
 
     it("handles hyphenated domains", () => {
@@ -100,6 +102,28 @@ describe("domHelpers - Pure Utility Functions", () => {
   });
 
   describe("parseMileageValue", () => {
+    describe("percent and dollar back format", () => {
+      it("parses 10% back correctly", () => {
+        expect(parseMileageValue("10% back")).toBe(10);
+      });
+
+      it("parses 2.5% back correctly", () => {
+        expect(parseMileageValue("2.5% back")).toBe(2.5);
+      });
+
+      it("parses $10 back correctly", () => {
+        expect(parseMileageValue("$10 back")).toBe(10);
+      });
+
+      it("parses $2.99 back correctly", () => {
+        expect(parseMileageValue("$2.99 back")).toBe(2.99);
+      });
+
+      it("returns 0 for percent/dollar without 'back'", () => {
+        expect(parseMileageValue("10% off")).toBe(0);
+        expect(parseMileageValue("$10 off")).toBe(0);
+      });
+    });
     describe("multiplier format", () => {
       it("parses 2X miles correctly", () => {
         expect(parseMileageValue("2X miles")).toBe(2000);
