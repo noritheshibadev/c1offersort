@@ -1,28 +1,48 @@
 .sort-button {
-  background-color: var(--color-green, #25810e);
-  color: var(--color-white, #ffffff);
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  min-height: 40px;
-  min-width: 120px;
-  padding: 0 16px;
+  position: relative;
+  width: 100%;
+  background: linear-gradient(180deg, var(--color-green-light) 0%, var(--color-green) 100%);
+  color: var(--color-white);
   border: none;
-  transition: transform 0.1s ease;
+  border-radius: var(--radius-sm);
+  padding: 13px 20px;
+  font-family: var(--font-main);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.sort-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--color-green) 0%, var(--color-green-dark) 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-md),
+    var(--shadow-green-glow),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.sort-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 
 .sort-button:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
+  background: linear-gradient(180deg, var(--color-green) 0%, var(--color-green-dark) 100%);
 }
 
 .sort-button.pressed {
-  transform: scale(0.95);
+  transform: scale(0.98);
 }
 
 .sort-button-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }

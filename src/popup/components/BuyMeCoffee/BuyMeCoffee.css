@@ -3,31 +3,29 @@
   justify-content: center;
   align-items: center;
   padding: 8px 12px;
-  margin-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  min-height: 40px;
+  margin-top: 10px;
+  min-height: 36px;
 }
 
 .buy-me-coffee-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #FFDD00 0%, #FFB800 100%);
-  color: #013d5b;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, var(--color-yellow) 0%, var(--color-yellow-light) 100%);
+  color: var(--color-blue);
   text-decoration: none;
-  border-radius: 16px;
+  border-radius: var(--radius-full);
   font-size: 11px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(255, 221, 0, 0.2);
-  position: relative;
-  opacity: 0.85;
+  font-weight: 600;
+  transition: all var(--duration-normal) var(--ease-out);
+  box-shadow: 0 2px 6px rgba(255, 221, 0, 0.25);
+  opacity: 0.9;
 }
 
 .buy-me-coffee-link:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(255, 221, 0, 0.35);
+  box-shadow: 0 4px 10px rgba(255, 221, 0, 0.35);
   opacity: 1;
 }
 
@@ -36,10 +34,10 @@
 }
 
 .shiba-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s var(--ease-out);
   border-radius: 50%;
   background: transparent;
 }

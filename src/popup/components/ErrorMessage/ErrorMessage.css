@@ -1,25 +1,25 @@
 .error-message {
-  background-color: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  border-radius: 6px;
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   margin-top: 8px;
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  animation: error-slide-in 0.2s ease-out;
+  animation: error-slide-in 0.25s var(--ease-out);
 }
 
 .error-message-icon {
-  color: #ef4444;
-  font-size: 16px;
+  color: #ff8a8a;
+  font-size: 14px;
   line-height: 1;
   flex-shrink: 0;
   margin-top: 1px;
 }
 
 .error-message-text {
-  color: #fee2e2;
+  color: #ffb4b4;
   font-size: 12px;
   line-height: 1.4;
   flex: 1;
@@ -28,23 +28,25 @@
 .error-message-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  padding: 0;
-  font-size: 16px;
+  padding: 2px;
+  font-size: 14px;
   line-height: 1;
   flex-shrink: 0;
-  transition: color 0.2s;
+  border-radius: 4px;
+  transition: all var(--duration-fast);
 }
 
 .error-message-close:hover {
   color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 @keyframes error-slide-in {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;

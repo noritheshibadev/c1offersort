@@ -1,5 +1,5 @@
 .status-message {
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   text-align: center;
 }
@@ -23,8 +23,9 @@
 }
 
 .status-message strong {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 11px;
+  color: var(--color-white);
 }
 
 .status-details {
