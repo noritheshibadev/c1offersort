@@ -37,7 +37,7 @@ export default defineConfig({
   manifest: {
     name: 'C1 Offers Sorter',
     description:
-      'A small utility extension used to load and sort all C1 offers by mileage or merchant name.',
+      'Search, sort, and filter Capital One shopping offers. Find high-value rewards instantly with favorites and smart sorting.',
     version: pkg.version,
     minimum_chrome_version: '109',
     permissions: ['activeTab', 'scripting', 'storage'],

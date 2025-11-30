@@ -8,8 +8,8 @@
  * As of January 2025, both URLs use identical layouts.
  */
 export const VALID_URLS = [
-  "https://capitaloneoffers.com/c1-offers",
   "https://capitaloneoffers.com/feed",
+  "https://capitaloneoffers.com/c1-offers",
 ] as const;
 
 /**
