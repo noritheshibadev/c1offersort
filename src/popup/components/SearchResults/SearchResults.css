@@ -4,15 +4,15 @@
 
 .search-results-list {
   position: absolute;
-  top: 0;
+  top: 4px;
   left: 0;
   right: 0;
-  max-height: 240px;
+  max-height: 260px;
   overflow-y: auto;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-lg);
   z-index: 1000;
 }
 
@@ -21,13 +21,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: none;
-  border-bottom: 1px solid #f0f0f0;
-  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: transparent;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.2s;
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .search-result-item:last-child {
@@ -35,24 +35,26 @@
 }
 
 .search-result-item:hover {
-  background-color: #f5f5f5;
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 .search-result-item:active {
-  background-color: #e8e8e8;
+  background-color: rgba(0, 0, 0, 0.08);
 }
 
 .search-result-merchant {
-  font-weight: 500;
-  color: #333;
-  font-size: 14px;
+  font-family: var(--font-main);
+  font-weight: var(--weight-medium);
+  color: #1a1a1a;
+  font-size: var(--text-md);
   flex: 1;
 }
 
 .search-result-mileage {
-  font-size: 12px;
-  color: #25810e;
-  font-weight: 500;
+  font-family: var(--font-main);
+  font-size: var(--text-sm);
+  color: var(--color-green);
+  font-weight: var(--weight-semibold);
   margin-left: 12px;
   white-space: nowrap;
 }

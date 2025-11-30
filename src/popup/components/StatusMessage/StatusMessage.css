@@ -1,35 +1,36 @@
 .status-message {
   border-radius: var(--radius-sm);
-  font-size: 11px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   text-align: center;
 }
 
 .status-message.success {
   background-color: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
 }
 
 .status-message.error {
   background-color: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
 }
 
 .status-message.progress {
   background-color: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-tertiary);
 }
 
 .status-message strong {
-  font-weight: 600;
-  font-size: 11px;
-  color: var(--color-white);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
 }
 
 .status-details {
-  font-size: 10px;
+  font-size: var(--text-xs);
   opacity: 0.7;
-  margin-top: 2px;
+  margin-top: 3px;
 }

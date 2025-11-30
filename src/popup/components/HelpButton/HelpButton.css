@@ -1,26 +1,29 @@
 .help-button {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 22px;
-  height: 22px;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border: 1.5px solid var(--border-glass-medium);
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-tertiary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  transition: all var(--duration-normal) var(--ease-out);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 .help-button:hover {
-  border-color: rgba(255, 255, 255, 0.6);
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-glass-strong);
+  color: var(--text-secondary);
+  background: var(--glass-white-1);
 }
 
 .help-tooltip {
@@ -28,17 +31,19 @@
   top: 100%;
   right: 0;
   margin-top: 8px;
-  background: rgba(0, 0, 0, 0.9);
-  color: white;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  font-weight: 400;
+  background: rgba(30, 30, 30, 0.95);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-normal) var(--ease-out);
   z-index: 1000;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: opacity var(--duration-normal) var(--ease-out);
 }
 
 .help-tooltip::before {
@@ -46,8 +51,8 @@
   position: absolute;
   bottom: 100%;
   right: 8px;
-  border: 4px solid transparent;
-  border-bottom-color: rgba(0, 0, 0, 0.9);
+  border: 5px solid transparent;
+  border-bottom-color: rgba(30, 30, 30, 0.95);
 }
 
 .help-button:hover .help-tooltip {
@@ -56,5 +61,5 @@
 
 .help-email {
   color: var(--color-yellow);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }

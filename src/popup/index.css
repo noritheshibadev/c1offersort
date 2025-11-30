@@ -1,9 +1,28 @@
 /* ========================================
-   CSS VARIABLES — Capital One Colors + Modern Treatment
+   CSS VARIABLES — Refined & Subtle Modernization
    ======================================== */
 :root {
   /* Typography */
-  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+
+  /* Type Scale */
+  --text-xs: 10px;
+  --text-sm: 11px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+
+  /* Font Weights */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Letter Spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: -0.01em;
+  --tracking-wide: 0.02em;
 
   /* Capital One Colors */
   --color-blue: #013d5b;
@@ -16,27 +35,67 @@
   --color-yellow-light: #ffe433;
   --color-white: #ffffff;
 
+  /* Glass Overlays */
+  --glass-white-1: rgba(255, 255, 255, 0.03);
+  --glass-white-2: rgba(255, 255, 255, 0.06);
+  --glass-white-3: rgba(255, 255, 255, 0.10);
+  --glass-white-4: rgba(255, 255, 255, 0.15);
+
+  /* Glass Borders */
+  --border-glass-subtle: rgba(255, 255, 255, 0.08);
+  --border-glass-light: rgba(255, 255, 255, 0.12);
+  --border-glass-medium: rgba(255, 255, 255, 0.18);
+  --border-glass-strong: rgba(255, 255, 255, 0.25);
+
+  /* Text Hierarchy */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --text-tertiary: rgba(255, 255, 255, 0.55);
+  --text-muted: rgba(255, 255, 255, 0.40);
+
+  /* Brand Glass Effects */
+  --green-glass-bg: rgba(37, 129, 14, 0.15);
+  --green-glass-border: rgba(37, 129, 14, 0.30);
+  --yellow-glass-bg: rgba(255, 221, 0, 0.12);
+  --yellow-glass-border: rgba(255, 221, 0, 0.25);
+
   /* Semantic */
   --color-error: #ef4444;
   --color-muted: rgba(255, 255, 255, 0.6);
   --color-subtle: rgba(255, 255, 255, 0.1);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.2);
-  --shadow-green-glow: 0 0 16px rgba(37, 129, 14, 0.3);
+  /* Shadows - Subtle & Soft */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 2px 4px rgba(0,0,0,0.04), 0 4px 8px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,0.03), 0 8px 16px rgba(0,0,0,0.06), 0 16px 32px rgba(0,0,0,0.09);
+  --shadow-green-glow: 0 0 12px rgba(37, 129, 14, 0.15);
+  --shadow-yellow-glow: 0 0 8px rgba(255, 221, 0, 0.12);
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  /* Button Shadows */
+  --shadow-button-rest: 0 2px 4px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.12);
+  --shadow-button-hover: 0 4px 8px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.15);
+  --shadow-button-pressed: 0 1px 2px rgba(0,0,0,0.10), inset 0 1px 2px rgba(0,0,0,0.08);
+
+  /* Inner Shadows */
+  --shadow-inset-subtle: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-inset-light: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* Radii - More Generous */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --radius-full: 100px;
 
   /* Transitions */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 150ms;
   --duration-normal: 200ms;
+  --duration-slow: 300ms;
+
+  /* Backdrop Blur */
+  --blur-sm: blur(8px);
 
   /* Legacy variables for compatibility */
   --color-background: #013d5b;

@@ -17,7 +17,7 @@ export const SortCriteriaSelector = ({
 
   return (
     <fieldset className="sort-criteria-selector">
-      <legend>Sort by:</legend>
+      <legend>Sort:</legend>
       <label>
         <input
           type="radio"
@@ -26,7 +26,7 @@ export const SortCriteriaSelector = ({
           checked={sortCriteria === "mileage"}
           onChange={handleChange}
         />
-        <span>Mileage Value</span>
+        <span>Mileage</span>
       </label>
       <label>
         <input
@@ -36,7 +36,7 @@ export const SortCriteriaSelector = ({
           checked={sortCriteria === "alphabetical"}
           onChange={handleChange}
         />
-        <span>Merchant Name</span>
+        <span>Merchant</span>
       </label>
     </fieldset>
   );

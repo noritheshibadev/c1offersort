@@ -10,10 +10,10 @@
 
 /* Spinner styling */
 .spinner {
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2.5px solid rgba(255, 255, 255, 0.2);
   border-top-color: var(--color-white);
   border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  animation: spin 0.8s linear infinite;
+  width: 18px;
+  height: 18px;
+  animation: spin 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }

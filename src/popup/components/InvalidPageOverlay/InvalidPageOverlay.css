@@ -9,49 +9,53 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 28px;
   text-align: center;
 }
 
 .overlay-icon {
-  margin-bottom: 16px;
-  font-size: 32px;
+  margin-bottom: 18px;
+  font-size: 36px;
 }
 
 .overlay-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--color-white);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  margin-bottom: 10px;
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-normal);
 }
 
 .overlay-message {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.4;
+  font-size: var(--text-md);
+  font-weight: var(--weight-normal);
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .overlay-button {
-  margin-top: 18px;
-  padding: 10px 20px;
+  margin-top: 20px;
+  padding: 12px 24px;
   background: linear-gradient(180deg, var(--color-green-light) 0%, var(--color-green) 100%);
   color: var(--color-white);
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
   font-family: var(--font-main);
-  transition: all var(--duration-fast) var(--ease-out);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-button-rest);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
 }
 
 .overlay-button:hover {
-  background: linear-gradient(180deg, var(--color-green) 0%, var(--color-green-dark) 100%);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-button-hover), var(--shadow-green-glow);
 }
 
 .overlay-button:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(0);
+  box-shadow: var(--shadow-button-pressed);
 }

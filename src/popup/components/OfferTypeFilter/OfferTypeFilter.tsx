@@ -25,7 +25,7 @@ export const OfferTypeFilter: React.FC<OfferTypeFilterProps> = ({
 }) => {
   return (
     <div className={`offer-type-filter ${disabled ? 'disabled' : ''}`}>
-      <span className="offer-type-filter-label">Filter by:</span>
+      <span className="offer-type-filter-label">Filter:</span>
       <div className="offer-type-filter-buttons">
         {FILTER_OPTIONS.map((option) => (
           <button

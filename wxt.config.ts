@@ -1,4 +1,5 @@
 import { defineConfig } from 'wxt';
+import pkg from './package.json';
 
 export default defineConfig({
   srcDir: 'src',
@@ -23,6 +24,7 @@ export default defineConfig({
       terserOptions: {
         compress: {
           drop_debugger: true,
+          drop_console: true,
         },
         format: {
           comments: false,
@@ -36,7 +38,7 @@ export default defineConfig({
     name: 'C1 Offers Sorter',
     description:
       'A small utility extension used to load and sort all C1 offers by mileage or merchant name.',
-    version: '2.3.0',
+    version: pkg.version,
     minimum_chrome_version: '109',
     permissions: ['activeTab', 'scripting', 'storage'],
     homepage_url: 'https://github.com/noritheshibadev/c1offersort',

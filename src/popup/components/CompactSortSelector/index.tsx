@@ -32,15 +32,15 @@ export const CompactSortSelector: React.FC<CompactSortSelectorProps> = ({
 
   return (
     <div className="compact-sort-selector">
-      <label className="sort-label">Sort by:</label>
+      <label className="sort-label">Sort:</label>
 
       <select
         className="sort-criteria-dropdown"
         value={sortConfig.criteria}
         onChange={handleCriteriaChange}
       >
-        <option value="mileage">Mileage Value</option>
-        <option value="alphabetical">Merchant Name</option>
+        <option value="mileage">Mileage</option>
+        <option value="alphabetical">Merchant</option>
       </select>
 
       <div className="sort-order-toggle">

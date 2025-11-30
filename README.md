@@ -5,23 +5,33 @@
 ## Features
 
 **Instant Search**
+
 - Search across all loaded offers by merchant name
 - Fuzzy matching finds offers even with typos
 - Click any result to instantly scroll to that offer on the page
 - Works seamlessly with thousands of offers
 
 **Smart Sorting**
+
 - Sort offers by highest or lowest mileage rewards
 - Sort alphabetically by merchant name (A-Z or Z-A)
 - Automatically loads all available offers before sorting
 
+**Offer Type Filter**
+
+- Filter by All, Multipliers (5X, 10X), or Static (500 miles) offers
+- Quickly find high-multiplier deals or fixed-value offers
+- Works with sorting and favorites filtering
+
 **Favorites Management**
+
 - Mark your favorite offers with star buttons
 - View all favorites in an expandable list
 - Filter to show only favorited offers on the page
 - Favorites persist across browsing sessions
 
 **Security & Privacy**
+
 - All data stored locally—nothing sent to external servers
 - Open source and transparent
 - Minimal permissions required
@@ -29,19 +39,23 @@
 ## Quick Start
 
 1. **Install the Extension**
+
    - Install from the [Chrome Web Store](https://chrome.google.com/webstore) (coming soon)
    - Or build from source (see Development section below)
 
 2. **Navigate to Capital One Offers**
+
    - Visit [capitaloneoffers.com/feed](https://capitaloneoffers.com/feed) or [capitaloneoffers.com/c1-offers](https://capitaloneoffers.com/c1-offers)
    - Click the extension icon in your Chrome toolbar
 
 3. **Search for Offers**
+
    - Use the search box to find specific merchants
    - Click any search result to jump to that offer on the page
    - Search works after all offers are loaded
 
 4. **Sort Your Offers**
+
    - Choose your sorting preference (mileage or alphabetical)
    - Select order (highest/lowest or A-Z/Z-A)
    - Click "Load & Sort Offers"
@@ -62,6 +76,7 @@
 5. Click any search result to instantly jump to that offer on the page
 
 **Tips:**
+
 - Search uses fuzzy matching—it works even if you misspell the merchant name
 - Search becomes available after pagination completes (all offers loaded)
 - Results show merchant name and mileage value
@@ -104,6 +119,7 @@ Read the full [Privacy Policy](docs/PRIVACY.md).
 ## Browser Compatibility
 
 - **Chrome**: Version 109 or later
+- **Firefox**: Version 109 or later _(New in v2.3)_
 - **Edge**: Chromium-based versions supported
 
 ## Development
@@ -127,7 +143,13 @@ yarn build
 1. Navigate to `chrome://extensions`
 2. Enable "Developer mode" (top right toggle)
 3. Click "Load unpacked"
-4. Select the `dist` folder from the project
+4. Select the `dist/chrome-mv3` folder from the project
+
+### Load in Firefox
+
+1. Navigate to `about:debugging#/runtime/this-firefox`
+2. Click "Load Temporary Add-on"
+3. Select `dist/firefox-mv3/manifest.json`
 
 ## Contributing
 
