@@ -4,7 +4,7 @@ import { InvalidPageOverlay } from './components/InvalidPageOverlay';
 import { HelpButton } from './components/HelpButton';
 import { FeatureErrorBoundary } from './components/FeatureErrorBoundary';
 import { COLORS } from '@/utils/constants';
-import type { SortConfig, SortResult } from '@/types';
+import type { SortConfig, SortResult, OfferType } from '@/types';
 
 // Context providers
 import { MessageBusProvider } from './context/MessageBusContext';
@@ -21,8 +21,9 @@ import { StatusBar } from './features/status/StatusBar';
 interface AppInnerProps {
   sortConfig: SortConfig;
   setSortConfig: (config: SortConfig) => void;
-  handleSort: () => Promise<void>;
+  handleSort: (offerTypeFilter?: OfferType) => Promise<void>;
   lastResult: SortResult | null;
+  hasSorted: boolean;
 }
 
 /**
@@ -33,6 +34,7 @@ const AppInner: React.FC<AppInnerProps> = ({
   setSortConfig,
   handleSort,
   lastResult,
+  hasSorted,
 }) => {
   const { isValidUrl } = useApp();
 
@@ -77,6 +79,7 @@ const AppInner: React.FC<AppInnerProps> = ({
             sortConfig={sortConfig}
             setSortConfig={setSortConfig}
             handleSort={handleSort}
+            hasSorted={hasSorted}
           />
         </FeatureErrorBoundary>
 
@@ -133,6 +136,7 @@ const App: React.FC = () => {
               setSortConfig={setSortConfig}
               handleSort={handleSort}
               lastResult={lastResult}
+              hasSorted={lastResult?.success === true}
             />
           </OperationsProvider>
         </AppProvider>

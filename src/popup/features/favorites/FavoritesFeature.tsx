@@ -79,23 +79,25 @@ export const FavoritesFeature: React.FC = () => {
           </div>
         )}
 
-        {/* Filter button */}
+        {/* Filter controls */}
         {favoritesEnabled && favoritesCount > 0 && (
-          <button
-            className={`favorites-filter-btn ${showFavoritesOnly ? 'active' : ''}`}
-            onClick={handleToggleFavoritesFilter}
-            disabled={!isValidUrl || isFilterLoading}
-          >
-            {isFilterLoading ? (
-              <span>Loading all offers...</span>
-            ) : (
-              <span>
-                {showFavoritesOnly
-                  ? '✓ Showing Favorites Only'
-                  : 'Show Favorites Only'}
-              </span>
-            )}
-          </button>
+          <div className="favorites-filter-section">
+            <button
+              className={`favorites-filter-btn ${showFavoritesOnly ? 'active' : ''}`}
+              onClick={handleToggleFavoritesFilter}
+              disabled={!isValidUrl || isFilterLoading}
+            >
+              {isFilterLoading ? (
+                <span>Loading all offers...</span>
+              ) : (
+                <span>
+                  {showFavoritesOnly
+                    ? '✓ Showing Favorites Only'
+                    : 'Show Favorites Only'}
+                </span>
+              )}
+            </button>
+          </div>
         )}
 
         {/* Favorites list */}

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { SortConfig, SortResult } from "../../types";
+import type { SortConfig, SortResult, OfferType } from "../../types";
 import { isValidCapitalOneUrl } from "../../utils/typeGuards";
 import { isSortingError } from "../../utils/errors";
 import { chromeService } from "@/services/ChromeService";
@@ -15,7 +15,7 @@ interface UseSortOffersResult {
   isLoading: boolean;
   sortConfig: SortConfig;
   setSortConfig: (config: SortConfig) => void;
-  handleSort: () => Promise<void>;
+  handleSort: (offerTypeFilter?: OfferType) => Promise<void>;
   lastResult: SortResult | null;
   progressUpdate: ProgressUpdate | null;
 }
@@ -144,8 +144,8 @@ export function useSortOffers(): UseSortOffersResult {
     };
   }, []);
 
-  const handleSort = useCallback(async () => {
-    console.log('[useSortOffers] handleSort called with config:', sortConfig);
+  const handleSort = useCallback(async (offerTypeFilter: OfferType = 'all') => {
+    console.log('[useSortOffers] handleSort called with config:', sortConfig, 'filter:', offerTypeFilter);
     setIsLoading(true);
     setLastResult(null);
     setProgressUpdate(null);
@@ -179,7 +179,7 @@ export function useSortOffers(): UseSortOffersResult {
       }
 
       console.log('[useSortOffers] Executing sort in active tab...');
-      const result = await chromeService.sendSortRequest(currentTab.id, sortConfig);
+      const result = await chromeService.sendSortRequest(currentTab.id, sortConfig, offerTypeFilter);
       console.log('[useSortOffers] Sort result:', result);
       setLastResult(result);
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
 import { chromeService } from '@/services/ChromeService';
 import type { PaginationProgressMessage } from '@/types/messages';
+import type { OfferType } from '@/types';
 import { useApp } from './AppContext';
 
 /**
@@ -26,6 +27,8 @@ interface OperationsContextValue {
   // Filter state
   showFavoritesOnly: boolean;
   setShowFavoritesOnly: (show: boolean) => void;
+  offerTypeFilter: OfferType;
+  setOfferTypeFilter: (filter: OfferType) => void;
 
   // Pagination progress (for "Load All" operations)
   loadAllProgress: {
@@ -52,6 +55,7 @@ export const OperationsProvider: React.FC<OperationsProviderProps> = ({
   const [isFavoritesLoading, setIsFavoritesLoading] = useState(false);
   const [isFilterLoading, setIsFilterLoading] = useState(false);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [offerTypeFilter, setOfferTypeFilter] = useState<OfferType>('all');
   const [loadAllProgress, setLoadAllProgress] = useState<{
     offersLoaded: number;
     pagesLoaded: number;
@@ -106,6 +110,8 @@ export const OperationsProvider: React.FC<OperationsProviderProps> = ({
       setIsFilterLoading,
       showFavoritesOnly,
       setShowFavoritesOnly,
+      offerTypeFilter,
+      setOfferTypeFilter,
       loadAllProgress,
       setLoadAllProgress,
     }),
@@ -115,6 +121,7 @@ export const OperationsProvider: React.FC<OperationsProviderProps> = ({
       isFavoritesLoading,
       isFilterLoading,
       showFavoritesOnly,
+      offerTypeFilter,
       loadAllProgress,
     ]
   );

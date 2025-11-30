@@ -1,5 +1,6 @@
 export type SortCriteria = "mileage" | "alphabetical";
 export type SortOrder = "desc" | "asc";
+export type OfferType = "all" | "multiplier" | "static";
 
 export interface SortConfig {
   criteria: SortCriteria;

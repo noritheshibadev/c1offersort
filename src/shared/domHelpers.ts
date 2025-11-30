@@ -218,6 +218,20 @@ export function parseMileageValue(text: string): number {
   return 0;
 }
 
+export function detectOfferType(mileageText: string): "multiplier" | "static" | "unknown" {
+  const cleanedText = mileageText.replace(/\*/g, "").trim();
+
+  if (MULTIPLIER_PATTERN.test(cleanedText)) {
+    return "multiplier";
+  }
+
+  if (MILES_PATTERN.test(cleanedText)) {
+    return "static";
+  }
+
+  return "unknown";
+}
+
 // Cache container to avoid repeated DOM queries
 let cachedContainer: HTMLElement | null = null;
 let lastContainerCheck = 0;

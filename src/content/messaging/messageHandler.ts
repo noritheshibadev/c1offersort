@@ -62,6 +62,7 @@ export function setupMessageHandler(
             fullyPaginated,
             processedTiles,
             reinjectStarsCallback,
+            message.offerTypeFilter || 'all',
             progressState
           );
           progressState.sort.isActive = false;
@@ -81,7 +82,11 @@ export function setupMessageHandler(
         case 'FILTER_REQUEST':
           progressState.filter.isActive = message.showFavoritesOnly;
           progressState.filter.progress = null;
-          const filterResult = await applyFavoritesFilter(message.showFavoritesOnly, fullyPaginated);
+          const filterResult = await applyFavoritesFilter(
+            message.showFavoritesOnly,
+            message.offerTypeFilter || 'all',
+            fullyPaginated
+          );
           progressState.filter.isActive = false;
           progressState.filter.progress = null;
           return filterResult;

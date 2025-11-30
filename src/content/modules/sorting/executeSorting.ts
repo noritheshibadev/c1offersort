@@ -2,10 +2,11 @@ import {
   extractMileageText,
   extractMerchantName,
   parseMileageValue,
+  detectOfferType,
   findMainContainer,
   findAllTiles,
 } from '@/shared/domHelpers';
-import type { SortResult } from '@/types';
+import type { SortResult, OfferType } from '@/types';
 import { loadAllTiles } from '../pagination';
 import { getWatcherCleanup } from '../../state';
 
@@ -92,6 +93,7 @@ function performSort(
  * @param fullyPaginated - Reference to track if pagination is complete
  * @param processedTiles - WeakMap to track which tiles have been processed (auto GC)
  * @param reinjectStarsCallback - Callback to re-inject stars after sorting
+ * @param offerTypeFilter - Filter to apply after sorting ('all', 'multiplier', 'static')
  * @param progressState - In-memory progress tracking state (optional for backwards compatibility)
  * @returns Result object with success status, tiles processed count, and any errors
  */
@@ -101,6 +103,7 @@ export async function executeSorting(
   fullyPaginated: { value: boolean },
   _processedTiles: WeakMap<HTMLElement, boolean>,
   reinjectStarsCallback: () => Promise<void>,
+  offerTypeFilter: OfferType = 'all',
   progressState?: {
     sort: {
       isActive: boolean;
@@ -154,17 +157,8 @@ export async function executeSorting(
 
     console.log('[Sorting] Setting grid properties on main container');
     mainContainer.style.setProperty("display", "grid", "important");
-    mainContainer.style.gridTemplateAreas = "none";
-    mainContainer.style.gridAutoFlow = "row";
-
-    const additionalOffersHeader = Array.from(document.querySelectorAll("h2")).find(
-      h => h.textContent?.includes("Additional Offers")
-    );
-    if (additionalOffersHeader) {
-      console.log('[Sorting] Scrolling to Additional Offers header before pagination');
-      additionalOffersHeader.scrollIntoView({ behavior: "smooth", block: "start" });
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
+    mainContainer.style.setProperty("grid-template-areas", "none", "important");
+    mainContainer.style.setProperty("grid-auto-flow", "row", "important");
 
     if (progressState) {
       progressState.sort.isActive = true;
@@ -196,13 +190,49 @@ export async function executeSorting(
 
     console.log('[Sorting] Final sort complete:', sortedTiles.length, 'tiles processed');
 
+    let visibleCount = sortedTiles.length;
+    if (offerTypeFilter !== 'all') {
+      console.log('[Sorting] Applying offer type filter:', offerTypeFilter);
+      let visibleIndex = 0;
+
+      await new Promise<void>(resolve => {
+        requestAnimationFrame(() => {
+          for (const item of sortedTiles) {
+            const mileageText = extractMileageText(item.element);
+            const tileOfferType = detectOfferType(mileageText);
+
+            if (tileOfferType === offerTypeFilter) {
+              item.element.style.removeProperty('display');
+              item.element.style.setProperty('order', String(visibleIndex), 'important');
+              visibleIndex++;
+            } else {
+              item.element.style.setProperty('display', 'none', 'important');
+            }
+          }
+          resolve();
+        });
+      });
+
+      visibleCount = visibleIndex;
+      console.log('[Sorting] Filter applied:', visibleCount, 'visible,', sortedTiles.length - visibleCount, 'hidden');
+    } else {
+      await new Promise<void>(resolve => {
+        requestAnimationFrame(() => {
+          for (const item of sortedTiles) {
+            item.element.style.removeProperty('display');
+          }
+          resolve();
+        });
+      });
+    }
+
     await reinjectStarsCallback();
 
     // Note: Observer was already disabled at the start of executeSorting for performance
 
     return {
       success: true,
-      tilesProcessed: sortedTiles.length,
+      tilesProcessed: visibleCount,
       pagesLoaded: pagesLoaded,
     };
   } finally {

@@ -1,23 +1,27 @@
 import {
   extractMerchantTLD,
-  findMainContainer,
+  extractMileageText,
+  detectOfferType,
   findAllTiles,
+  findMainContainer,
   countRealTiles,
 } from '@/shared/domHelpers';
 import { getFavorites } from '@/shared/favoritesHelpers';
 import { loadAllTiles } from '../pagination';
 import { getWatcherCleanup } from '../../state';
+import type { OfferType } from '@/types';
 
 /**
- * Applies or removes favorites filter to show/hide offer tiles.
- * When enabled, loads all offers first, then hides non-favorited offers and compacts the grid layout.
+ * Applies filters to show/hide offer tiles based on favorites and/or offer type.
  *
- * @param showFavoritesOnly - If true, show only favorited offers; if false, show all
+ * @param showFavoritesOnly - If true, show only favorited offers
+ * @param offerTypeFilter - Filter by offer type: 'all', 'multiplier', or 'static'
  * @param fullyPaginated - Reference to track if pagination is complete
  * @returns Result with success status, tile counts, and list of favorites not currently visible
  */
 export async function applyFavoritesFilter(
   showFavoritesOnly: boolean,
+  offerTypeFilter: OfferType,
   fullyPaginated: { value: boolean }
 ): Promise<{
   success: boolean;
@@ -27,6 +31,8 @@ export async function applyFavoritesFilter(
   error?: string;
 }> {
   try {
+    const isFilteringActive = showFavoritesOnly || offerTypeFilter !== 'all';
+
     if (showFavoritesOnly) {
       await loadAllTiles(fullyPaginated);
 
@@ -40,43 +46,69 @@ export async function applyFavoritesFilter(
     const favorites = await getFavorites();
     const favoritedTLDs = new Set(favorites.map((fav) => fav.merchantTLD));
 
-    const mainContainer = findMainContainer();
-    if (mainContainer && showFavoritesOnly) {
-      mainContainer.style.setProperty("display", "grid", "important");
-      mainContainer.style.gridTemplateAreas = "none";
-      mainContainer.style.gridAutoFlow = "row";
-    }
-
     const tiles = findAllTiles();
 
     let hiddenCount = 0;
     let shownCount = 0;
     const missingFavorites: string[] = [];
     const foundFavorites = new Set<string>();
-    const visibleTiles: HTMLElement[] = [];
+    const visibleTilesList: HTMLElement[] = [];
 
     for (const tile of tiles) {
-      const merchantTLD = extractMerchantTLD(tile as HTMLElement);
+      const el = tile as HTMLElement;
+      const merchantTLD = extractMerchantTLD(el);
       const isFavorited = favoritedTLDs.has(merchantTLD);
 
-      if (showFavoritesOnly) {
+      let matchesTypeFilter = true;
+      if (offerTypeFilter !== 'all') {
+        const mileageText = extractMileageText(el);
+        const tileOfferType = detectOfferType(mileageText);
+        matchesTypeFilter = tileOfferType === offerTypeFilter;
+      }
+
+      const matchesFavoritesFilter = !showFavoritesOnly || isFavorited;
+      const shouldShow = matchesFavoritesFilter && matchesTypeFilter;
+
+      if (shouldShow) {
+        el.style.removeProperty('display');
+        visibleTilesList.push(el);
+        shownCount++;
         if (isFavorited) {
-          (tile as HTMLElement).style.removeProperty('display');
-          (tile as HTMLElement).style.setProperty('grid-area', 'auto', 'important');
-          (tile as HTMLElement).style.setProperty('order', '0', 'important');
-          visibleTiles.push(tile as HTMLElement);
-          shownCount++;
           foundFavorites.add(merchantTLD);
-        } else {
-          (tile as HTMLElement).style.setProperty('display', 'none', 'important');
-          hiddenCount++;
         }
       } else {
-        // Turning filter off - reset everything
-        (tile as HTMLElement).style.removeProperty('display');
-        (tile as HTMLElement).style.removeProperty('grid-area');
-        (tile as HTMLElement).style.removeProperty('order');
-        shownCount++;
+        el.style.setProperty('display', 'none', 'important');
+        hiddenCount++;
+      }
+    }
+
+    const mainContainer = findMainContainer();
+
+    if (mainContainer) {
+      if (isFilteringActive) {
+        mainContainer.style.setProperty('display', 'grid', 'important');
+        mainContainer.style.setProperty('grid-template-areas', 'none', 'important');
+        mainContainer.style.setProperty('grid-auto-flow', 'row', 'important');
+
+        visibleTilesList.sort((a, b) => {
+          const orderA = parseInt(a.style.order) || 0;
+          const orderB = parseInt(b.style.order) || 0;
+          return orderA - orderB;
+        });
+
+        visibleTilesList.forEach((tile, index) => {
+          tile.style.setProperty('grid-area', 'auto', 'important');
+          tile.style.setProperty('order', String(index), 'important');
+        });
+      } else {
+        mainContainer.style.removeProperty('display');
+        mainContainer.style.removeProperty('grid-template-areas');
+        mainContainer.style.removeProperty('grid-auto-flow');
+
+        for (const tile of tiles) {
+          (tile as HTMLElement).style.removeProperty('grid-area');
+          (tile as HTMLElement).style.removeProperty('order');
+        }
       }
     }
 
@@ -89,7 +121,9 @@ export async function applyFavoritesFilter(
           }
         }
       });
+    }
 
+    if (showFavoritesOnly) {
       const additionalOffersHeader = Array.from(document.querySelectorAll("h2")).find(
         h => h.textContent?.includes("Additional Offers")
       );

@@ -1,16 +1,19 @@
 import React, { useCallback } from 'react';
 import { CompactSortSelector } from '../../components/CompactSortSelector';
+import { OfferTypeFilter } from '../../components/OfferTypeFilter';
 import { SortButton } from '../../components/SortButton';
 import ErrorMessage from '../../components/ErrorMessage';
 import { useApp } from '../../context/AppContext';
 import { useOperations } from '../../context/OperationsContext';
 import { useError } from '../../context/ErrorContext';
-import type { SortConfig } from '@/types';
+import { applyFavoritesFilterInActiveTab } from '../../services/applyFavoritesFilter';
+import type { SortConfig, OfferType } from '@/types';
 
 interface SortingFeatureProps {
   sortConfig: SortConfig;
   setSortConfig: (config: SortConfig) => void;
-  handleSort: () => Promise<void>;
+  handleSort: (offerTypeFilter?: OfferType) => Promise<void>;
+  hasSorted: boolean;
 }
 
 /**
@@ -20,9 +23,10 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
   sortConfig,
   setSortConfig,
   handleSort,
+  hasSorted,
 }) => {
-  const { isValidUrl } = useApp();
-  const { isSortLoading } = useOperations();
+  const { isValidUrl, currentTabId } = useApp();
+  const { isSortLoading, offerTypeFilter, setOfferTypeFilter, showFavoritesOnly } = useOperations();
   const { errorMessage, clearError } = useError();
 
   const handleSortConfigChange = useCallback(
@@ -31,6 +35,21 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
     },
     [setSortConfig]
   );
+
+  const handleSortWithFilter = useCallback(() => {
+    return handleSort(offerTypeFilter);
+  }, [handleSort, offerTypeFilter]);
+
+  const handleFilterChange = useCallback(async (newFilter: OfferType) => {
+    if (newFilter === offerTypeFilter) return;
+    setOfferTypeFilter(newFilter);
+
+    if (hasSorted) {
+      await handleSort(newFilter);
+    } else if (currentTabId) {
+      await applyFavoritesFilterInActiveTab(currentTabId, showFavoritesOnly, newFilter);
+    }
+  }, [offerTypeFilter, setOfferTypeFilter, hasSorted, handleSort, currentTabId, showFavoritesOnly]);
 
   return (
     <div
@@ -42,12 +61,19 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
         flexShrink: 0,
       }}
     >
-      <CompactSortSelector
-        sortConfig={sortConfig}
-        onConfigChange={handleSortConfigChange}
-      />
+      <div className="sorting-controls-container">
+        <CompactSortSelector
+          sortConfig={sortConfig}
+          onConfigChange={handleSortConfigChange}
+        />
+        <OfferTypeFilter
+          value={offerTypeFilter}
+          onChange={handleFilterChange}
+          disabled={!isValidUrl || isSortLoading}
+        />
+      </div>
       <SortButton
-        onClick={handleSort}
+        onClick={handleSortWithFilter}
         isLoading={isSortLoading}
         disabled={!isValidUrl}
       />

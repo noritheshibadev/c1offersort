@@ -3,6 +3,8 @@
  * Used for type-safe message passing via chrome.runtime.sendMessage.
  */
 
+import type { OfferType } from "./index";
+
 export interface PaginationProgressMessage {
   type: "PAGINATION_PROGRESS";
   offersLoaded: number;
@@ -18,11 +20,13 @@ export interface SortRequestMessage {
   type: "SORT_REQUEST";
   criteria: string;
   order: string;
+  offerTypeFilter?: OfferType;
 }
 
 export interface FilterRequestMessage {
   type: "FILTER_REQUEST";
   showFavoritesOnly: boolean;
+  offerTypeFilter: OfferType;
 }
 
 export interface InjectFavoritesRequestMessage {

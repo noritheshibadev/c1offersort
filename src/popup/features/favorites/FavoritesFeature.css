@@ -179,6 +179,14 @@
   flex-shrink: 0;
 }
 
+/* Filter section */
+.favorites-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* Filter button */
 .favorites-filter-btn {
   width: 100%;
