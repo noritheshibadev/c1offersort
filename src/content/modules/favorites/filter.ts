@@ -6,7 +6,7 @@ import {
 } from '@/shared/domHelpers';
 import { getFavorites } from '@/shared/favoritesHelpers';
 import { loadAllTiles } from '../pagination';
-import { getWatcherCleanup } from '../../index';
+import { getWatcherCleanup } from '../../state';
 
 /**
  * Applies or removes favorites filter to show/hide offer tiles.

@@ -40,3 +40,32 @@ export const COLORS = {
   WHITE: "#ffffff",
   ERROR_OVERLAY: "rgba(0, 0, 0, 0.9)",
 } as const;
+
+/**
+ * Pagination timing constants
+ * These control the adaptive delay behavior when loading all offers
+ */
+export const PAGINATION_CONFIG = {
+  /** Starting delay in ms (faster for quick systems) */
+  INITIAL_DELAY: 200,
+  /** Minimum delay floor in ms (protects slow React rendering) */
+  MIN_DELAY: 150,
+  /** Maximum delay ceiling in ms (slowest for slow connections) */
+  MAX_DELAY: 4000,
+  /** Delay between retries when button not found */
+  RETRY_DELAY: 300,
+  /** Number of quick retries before giving up on button */
+  MAX_RETRIES: 3,
+  /** Response time considered "fast" - speed up more aggressively */
+  FAST_THRESHOLD: 300,
+  /** Response time considered "slow" - don't speed up */
+  SLOW_THRESHOLD: 1000,
+  /** Maximum pagination attempts */
+  MAX_ATTEMPTS: 50,
+  /** Maximum consecutive failures before stopping */
+  MAX_CONSECUTIVE_FAILURES: 3,
+  /** Number of response times to average for adaptive delay */
+  HISTORY_SIZE: 5,
+  /** Polling interval for checking new tiles */
+  POLL_INTERVAL: 50,
+} as const;

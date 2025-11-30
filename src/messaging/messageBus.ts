@@ -1,10 +1,10 @@
 /**
  * Centralized message bus for type-safe communication between extension contexts.
  * Provides a unified API for sending and receiving messages across popup, content, and background scripts.
+ *
+ * Note: Uses WXT's globally provided `browser` object for cross-browser compatibility.
  */
 
-import browser from 'webextension-polyfill';
-import type { Runtime } from 'webextension-polyfill';
 import type {
   ExtensionMessage,
   PaginationProgressMessage,
@@ -83,11 +83,11 @@ export class MessageBus {
   static onMessage<T extends ExtensionMessage>(
     handler: (
       message: T,
-      sender: Runtime.MessageSender,
+      sender: Browser.runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ) => void | boolean | Promise<void>
   ): () => void {
-    const listener = (message: unknown, sender: Runtime.MessageSender, sendResponse: (response?: unknown) => void): boolean | Promise<void> => {
+    const listener = (message: unknown, sender: Browser.runtime.MessageSender, sendResponse: (response?: unknown) => void): boolean | Promise<void> => {
       try {
         const result = handler(message as T, sender, sendResponse);
         // Return true if handler is async or needs to send response later
@@ -119,7 +119,7 @@ export class MessageBus {
   static onMessageFromTab<T extends ExtensionMessage>(
     handler: (
       message: T,
-      sender: Runtime.MessageSender,
+      sender: Browser.runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ) => void | boolean | Promise<void>
   ): () => void {
@@ -167,7 +167,7 @@ export function createMessageListener<T extends ExtensionMessage>(
   typeGuard: (msg: unknown) => msg is T,
   handler: (
     message: T,
-    sender: Runtime.MessageSender,
+    sender: Browser.runtime.MessageSender,
     sendResponse: (response?: unknown) => void
   ) => void | boolean | Promise<void>
 ): () => void {

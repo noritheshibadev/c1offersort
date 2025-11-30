@@ -1,6 +1,13 @@
+/**
+ * Pagination module for content script.
+ * Injects the pagination unlisted script into the page context
+ * and communicates via DOM bridge pattern.
+ */
+
 import { findViewMoreButton } from '../../shared/domHelpers';
-import { progressState } from '../index';
+import { progressState } from '../state';
 import { SELECTORS } from '../../utils/constants';
+import { DOM_BRIDGE_IDS } from '../../shared/paginationHelpers';
 import { buildSearchIndex } from './search';
 
 function parsePaginationResult(element: HTMLElement | null): { pagesLoaded: number } {
@@ -24,7 +31,9 @@ function parsePaginationResult(element: HTMLElement | null): { pagesLoaded: numb
   return { pagesLoaded };
 }
 
-function parsePaginationProgress(element: HTMLElement | null): { offersLoaded: number; pagesLoaded: number } | null {
+function parsePaginationProgress(
+  element: HTMLElement | null
+): { offersLoaded: number; pagesLoaded: number } | null {
   if (!element) {
     return null;
   }
@@ -47,31 +56,28 @@ function parsePaginationProgress(element: HTMLElement | null): { offersLoaded: n
   return { offersLoaded, pagesLoaded };
 }
 
+/**
+ * Clean up all pagination DOM elements
+ */
+function cleanupDOMElements(): void {
+  Object.values(DOM_BRIDGE_IDS).forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  });
+}
+
 async function executePaginationInPageContext(): Promise<number> {
   console.log('[Pagination] Injecting pagination script into page context...');
 
   return new Promise((resolve) => {
     let checkResult: ReturnType<typeof setInterval> | null = null;
 
-    // Consolidated cleanup function for intervals and DOM elements
+    // Consolidated cleanup function for intervals
     const cleanup = () => {
       if (checkResult !== null) {
         clearInterval(checkResult);
         checkResult = null;
       }
-    };
-
-    const cleanupDOMElements = () => {
-      const elementsToRemove = [
-        'c1-pagination-result',
-        'c1-pagination-progress',
-        'c1-layout-info',
-        'c1-pagination-abort'
-      ];
-      elementsToRemove.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-      });
     };
 
     try {
@@ -80,7 +86,7 @@ async function executePaginationInPageContext(): Promise<number> {
 
       // Pass selector information to injected script via DOM
       const layoutInfo = document.createElement('div');
-      layoutInfo.id = 'c1-layout-info';
+      layoutInfo.id = DOM_BRIDGE_IDS.LAYOUT_INFO;
       layoutInfo.style.display = 'none';
       layoutInfo.setAttribute('data-view-more-selector', SELECTORS.viewMoreButton);
       layoutInfo.setAttribute('data-tile-selector', SELECTORS.offerTile);
@@ -89,19 +95,20 @@ async function executePaginationInPageContext(): Promise<number> {
       console.log('[Pagination] Injected selector info for pagination');
 
       const script = document.createElement('script');
-      script.src = chrome.runtime.getURL('injected-scripts/pagination.js');
+      // WXT unlisted scripts are at the root level
+      script.src = browser.runtime.getURL('pagination.js');
       script.onload = () => {
         console.log('[Pagination] Script loaded, waiting for completion...');
         script.remove();
 
         let attempts = 0;
-        const maxWaitAttempts = 1200; // 4 minutes with 200ms polling (faster detection)
+        const maxWaitAttempts = 1200; // 4 minutes with 200ms polling
         let lastProgressTimestamp = 0;
 
         checkResult = setInterval(() => {
           console.log('[Pagination] Polling for result... attempt', attempts);
 
-          const progressElement = document.getElementById('c1-pagination-progress');
+          const progressElement = document.getElementById(DOM_BRIDGE_IDS.PAGINATION_PROGRESS);
           if (progressElement) {
             const timestamp = progressElement.getAttribute('data-timestamp');
             if (timestamp && timestamp !== lastProgressTimestamp.toString()) {
@@ -109,7 +116,13 @@ async function executePaginationInPageContext(): Promise<number> {
               const progress = parsePaginationProgress(progressElement);
 
               if (progress) {
-                console.log('[Pagination] Sending progress update:', progress.offersLoaded, 'offers,', progress.pagesLoaded, 'pages');
+                console.log(
+                  '[Pagination] Sending progress update:',
+                  progress.offersLoaded,
+                  'offers,',
+                  progress.pagesLoaded,
+                  'pages'
+                );
 
                 if (progressState.sort.isActive) {
                   progressState.sort.progress = {
@@ -125,11 +138,11 @@ async function executePaginationInPageContext(): Promise<number> {
                 }
 
                 try {
-                  chrome.runtime.sendMessage({
-                    type: "PAGINATION_PROGRESS",
+                  browser.runtime.sendMessage({
+                    type: 'PAGINATION_PROGRESS',
                     offersLoaded: progress.offersLoaded,
                     pagesLoaded: progress.pagesLoaded,
-                  }).catch((err) => {
+                  }).catch((err: Error) => {
                     console.log('[Pagination] Failed to send progress message:', err);
                   });
                 } catch (error) {
@@ -139,7 +152,7 @@ async function executePaginationInPageContext(): Promise<number> {
             }
           }
 
-          const resultElement = document.getElementById('c1-pagination-result');
+          const resultElement = document.getElementById(DOM_BRIDGE_IDS.PAGINATION_RESULT);
           console.log('[Pagination] Checking for result element:', resultElement);
 
           if (resultElement) {
@@ -159,7 +172,7 @@ async function executePaginationInPageContext(): Promise<number> {
             cleanupDOMElements();
             resolve(0);
           }
-        }, 200); // Optimized: 200ms polling for faster completion detection (60% faster than 500ms)
+        }, 200);
       };
 
       script.onerror = (error) => {
@@ -182,7 +195,7 @@ async function executePaginationInPageContext(): Promise<number> {
 
 export async function loadAllTiles(fullyPaginated: { value: boolean }): Promise<number> {
   console.log('[Pagination] loadAllTiles started', {
-    fullyPaginatedValue: fullyPaginated.value
+    fullyPaginatedValue: fullyPaginated.value,
   });
 
   // Check if button exists - if it does, reset the flag even if we thought we were done
@@ -190,7 +203,7 @@ export async function loadAllTiles(fullyPaginated: { value: boolean }): Promise<
   console.log('[Pagination] Initial "View More Offers" button:', {
     found: !!initialButton,
     buttonText: initialButton?.textContent?.trim(),
-    buttonClasses: initialButton?.className
+    buttonClasses: initialButton?.className,
   });
 
   if (!initialButton) {
@@ -201,7 +214,9 @@ export async function loadAllTiles(fullyPaginated: { value: boolean }): Promise<
 
   // Button exists - reset flag and paginate (handles case where pagination stopped early)
   if (fullyPaginated.value) {
-    console.log('[Pagination] Button still exists despite fullyPaginated flag - resetting and retrying pagination');
+    console.log(
+      '[Pagination] Button still exists despite fullyPaginated flag - resetting and retrying pagination'
+    );
     fullyPaginated.value = false;
   }
 

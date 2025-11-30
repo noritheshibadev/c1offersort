@@ -7,7 +7,7 @@ import {
 } from '@/shared/domHelpers';
 import type { SortResult } from '@/types';
 import { loadAllTiles } from '../pagination';
-import { getWatcherCleanup } from '../../index';
+import { getWatcherCleanup } from '../../state';
 
 interface TileData {
   element: HTMLElement;

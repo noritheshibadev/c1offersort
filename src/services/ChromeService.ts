@@ -7,10 +7,10 @@
  * - Easier testing (can mock this service)
  * - Cross-browser compatibility layer (supports Chrome and Firefox)
  * - Consistent error handling
+ *
+ * Note: Uses WXT's globally provided `browser` object for cross-browser compatibility.
  */
 
-import browser from 'webextension-polyfill';
-import type { Runtime, Tabs } from 'webextension-polyfill';
 import { MessageBus } from '../messaging/messageBus';
 import { getWithTimeout, setWithTimeout } from '../utils/storageWithTimeout';
 import type {
@@ -90,7 +90,7 @@ class ChromeService {
   /**
    * Get the currently active tab
    */
-  async getCurrentTab(): Promise<Tabs.Tab> {
+  async getCurrentTab(): Promise<Browser.tabs.Tab> {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     if (!tab) {
       throw new Error('No active tab found');
@@ -312,13 +312,13 @@ class ChromeService {
   onMessage<T extends ExtensionMessage>(
     handler: (
       message: T,
-      sender: Runtime.MessageSender,
+      sender: Browser.runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ) => void | boolean | Promise<void>
   ): () => void {
     const listener = (
       message: unknown,
-      sender: Runtime.MessageSender,
+      sender: Browser.runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ): boolean | Promise<void> => {
       const result = handler(message as T, sender, sendResponse);

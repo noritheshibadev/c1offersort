@@ -2,7 +2,7 @@ import { executeSorting } from '../modules/sorting/executeSorting';
 import { applyFavoritesFilter, loadAllOffers } from '../modules/favorites/filter';
 import { injectFavorites, removeFavoritesStars } from '../modules/favorites/inject';
 import { updateStarState } from '../modules/favorites/updateStarState';
-import { getWatcherCleanup } from '../index';
+import { getWatcherCleanup } from '../state';
 import { buildSearchIndex, executeSearch, scrollToOffer, isSearchIndexReady } from '../modules/search';
 import { findAllTiles } from '../../shared/domHelpers';
 
