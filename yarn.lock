@@ -613,6 +613,11 @@
     "@types/prop-types" "*"
     csstype "^3.0.2"
 
+"@types/webextension-polyfill@^0.12.4":
+  version "0.12.4"
+  resolved "https://registry.yarnpkg.com/@types/webextension-polyfill/-/webextension-polyfill-0.12.4.tgz#d111b76e1ebf421fb64244598453bf44763a0266"
+  integrity sha512-wK8YdSI0pDiaehSLDIvtvonYmLwUUivg4Z6JCJO8rkyssMAG82cFJgwPK/V7NO61mJBLg/tXeoXQL8AFzpXZmQ==
+
 "@types/whatwg-mimetype@^3.0.2":
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/@types/whatwg-mimetype/-/whatwg-mimetype-3.0.2.tgz#e5e06dcd3e92d4e622ef0129637707d66c28d6a4"
@@ -1247,6 +1252,11 @@ vitest@^4.0.4:
     tinyrainbow "^3.0.3"
     vite "^6.0.0 || ^7.0.0"
     why-is-node-running "^2.3.0"
+
+webextension-polyfill@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/webextension-polyfill/-/webextension-polyfill-0.12.0.tgz#f62c57d2cd42524e9fbdcee494c034cae34a3d69"
+  integrity sha512-97TBmpoWJEE+3nFBQ4VocyCdLKfw54rFaJ6EVQYLBCXqCIpLSZkwGgASpv4oPt9gdKCJ80RJlcmNzNn008Ag6Q==
 
 whatwg-mimetype@^3.0.0:
   version "3.0.0"

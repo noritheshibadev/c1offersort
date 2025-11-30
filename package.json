@@ -7,7 +7,10 @@
     "start": "vite",
     "build": "vite build --mode development && vite build --config vite.content.config.ts --mode development && vite build --config vite.background.config.ts --mode development",
     "build:prod": "find public -name '.DS_Store' -delete && vite build --mode production && vite build --config vite.content.config.ts --mode production && vite build --config vite.background.config.ts --mode production",
+    "build:firefox": "yarn build:prod && node scripts/prepare-firefox.js",
     "package": "bash scripts/package.sh",
+    "package:firefox": "bash scripts/package-firefox.sh",
+    "package:source": "bash scripts/package-source.sh",
     "serve": "vite preview",
     "watch": "vite build --watch --mode development",
     "typecheck": "tsc --noEmit --project tsconfig.build.json",
@@ -19,7 +22,8 @@
   "dependencies": {
     "fuse.js": "^7.1.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -29,6 +33,7 @@
     "@types/node": "^24.9.1",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
+    "@types/webextension-polyfill": "^0.12.4",
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/ui": "^4.0.4",
     "happy-dom": "^20.0.8",

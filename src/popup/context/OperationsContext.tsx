@@ -63,12 +63,15 @@ export const OperationsProvider: React.FC<OperationsProviderProps> = ({
 
     async function queryFilterProgress() {
       try {
-        const response = await chromeService.getFilterProgress(currentTabId);
+        const response = await chromeService.getFilterProgress(currentTabId!);
 
         if (response && response.isActive) {
           setIsFilterLoading(true);
-          if (response.progress) {
-            setLoadAllProgress(response.progress);
+          if (response.progress && response.progress.offersLoaded !== undefined && response.progress.pagesLoaded !== undefined) {
+            setLoadAllProgress({
+              offersLoaded: response.progress.offersLoaded,
+              pagesLoaded: response.progress.pagesLoaded,
+            });
           }
         }
       } catch (error) {

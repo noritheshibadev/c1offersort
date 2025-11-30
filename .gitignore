@@ -9,6 +9,7 @@
 # Production
 /build
 /dist
+/dist-firefox
 
 # Development
 .env.local
@@ -29,10 +30,11 @@ yarn-error.log*
 .DS_Store
 .env
 
-# Chrome Extension specific
+# Browser Extension packages
 *.crx
 *.pem
 *.zip
+*.xpi
 dist.zip
 web-store-upload.zip
 releases/

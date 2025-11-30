@@ -5,10 +5,12 @@
  * Benefits:
  * - Single source of truth for Chrome API calls
  * - Easier testing (can mock this service)
- * - Cross-browser compatibility layer (potential future Firefox/Safari support)
+ * - Cross-browser compatibility layer (supports Chrome and Firefox)
  * - Consistent error handling
  */
 
+import browser from 'webextension-polyfill';
+import type { Runtime, Tabs } from 'webextension-polyfill';
 import { MessageBus } from '../messaging/messageBus';
 import { getWithTimeout, setWithTimeout } from '../utils/storageWithTimeout';
 import type {
@@ -88,8 +90,8 @@ class ChromeService {
   /**
    * Get the currently active tab
    */
-  async getCurrentTab(): Promise<chrome.tabs.Tab> {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  async getCurrentTab(): Promise<Tabs.Tab> {
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     if (!tab) {
       throw new Error('No active tab found');
     }
@@ -310,23 +312,28 @@ class ChromeService {
   onMessage<T extends ExtensionMessage>(
     handler: (
       message: T,
-      sender: chrome.runtime.MessageSender,
+      sender: Runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ) => void | boolean | Promise<void>
   ): () => void {
     const listener = (
       message: unknown,
-      sender: chrome.runtime.MessageSender,
+      sender: Runtime.MessageSender,
       sendResponse: (response?: unknown) => void
-    ) => {
-      return handler(message as T, sender, sendResponse);
+    ): boolean | Promise<void> => {
+      const result = handler(message as T, sender, sendResponse);
+      // Convert void to false, keep true as true, keep Promise as is
+      if (result instanceof Promise) {
+        return result;
+      }
+      return result === true;
     };
 
-    chrome.runtime.onMessage.addListener(listener);
+    browser.runtime.onMessage.addListener(listener as any);
 
     // Return cleanup function
     return () => {
-      chrome.runtime.onMessage.removeListener(listener);
+      browser.runtime.onMessage.removeListener(listener as any);
     };
   }
 

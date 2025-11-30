@@ -15,7 +15,7 @@ interface SearchResultsProps {
  */
 export const SearchResults: React.FC<SearchResultsProps> = ({
   results,
-  totalMatches,
+  totalMatches: _totalMatches,
   onSelectResult,
   isSearching,
 }) => {

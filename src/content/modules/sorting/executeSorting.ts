@@ -29,9 +29,9 @@ const tileDataCache = new WeakMap<HTMLElement, TileData>();
 function performSort(
   sortCriteria: string,
   sortOrder: string
-): number {
+): TileData[] {
   const allTiles = findAllTiles();
-  if (allTiles.length === 0) return 0;
+  if (allTiles.length === 0) return [];
 
   // PHASE 1: READ - Extract all data from DOM (cached or fresh)
   const tilesWithData: TileData[] = allTiles

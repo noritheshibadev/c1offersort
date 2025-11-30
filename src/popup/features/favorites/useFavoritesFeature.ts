@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useFavorites } from '../../hooks/useFavorites';
 import { injectFavoritesInActiveTab } from '../../services/favoritesInjection';
 import { applyFavoritesFilterInActiveTab } from '../../services/applyFavoritesFilter';

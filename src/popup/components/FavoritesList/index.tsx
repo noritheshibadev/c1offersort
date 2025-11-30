@@ -1,6 +1,7 @@
 import type { FavoritedOffer } from "@/types";
 import { removeFavorite } from "@/utils/favoritesManager";
 import { chromeService } from "@/services/ChromeService";
+import { useApp } from "@/popup/context/AppContext";
 import "./FavoritesList.css";
 
 interface FavoritesListProps {
@@ -16,12 +17,16 @@ export const FavoritesList = ({
   onRemove,
   currentUrl,
 }: FavoritesListProps) => {
+  const { currentTabId } = useApp();
+
   const handleRemove = async (merchantTLD: string) => {
     try {
       await removeFavorite(merchantTLD, currentUrl || undefined);
 
       // Send message to content script to update the star button on the page
-      await chromeService.updateStarState(merchantTLD, false);
+      if (currentTabId) {
+        await chromeService.updateStarState(currentTabId, merchantTLD, false);
+      }
 
       onRemove();
     } catch (error) {

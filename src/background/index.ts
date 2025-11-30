@@ -3,6 +3,7 @@
  * Handles message routing, state coordination, and extension lifecycle events.
  */
 
+import browser from 'webextension-polyfill';
 import { MessageBus } from '../messaging/messageBus';
 import { config } from '../config';
 import type { ExtensionMessage } from '../types/messages';
@@ -12,7 +13,7 @@ console.log(`${config.logging.contexts.background} Initializing...`);
 /**
  * Handle extension installation and updates
  */
-chrome.runtime.onInstalled.addListener((details) => {
+browser.runtime.onInstalled.addListener((details) => {
   console.log(`${config.logging.contexts.background} Extension installed/updated:`, details.reason);
 
   if (details.reason === 'install') {
@@ -80,7 +81,7 @@ MessageBus.onMessage<ExtensionMessage>((message, sender, _sendResponse) => {
 /**
  * Handle extension startup
  */
-chrome.runtime.onStartup.addListener(() => {
+browser.runtime.onStartup.addListener(() => {
   console.log(`${config.logging.contexts.background} Extension started`);
 });
 

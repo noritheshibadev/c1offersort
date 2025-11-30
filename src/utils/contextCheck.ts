@@ -4,15 +4,17 @@
  * and handle context invalidation gracefully.
  */
 
+import browser from 'webextension-polyfill';
+
 /**
  * Checks if the Chrome extension context is still valid.
  * Returns false if the extension has been reloaded, updated, or disabled.
  */
 export function isExtensionContextValid(): boolean {
   try {
-    // Attempt to access chrome.runtime.id
+    // Attempt to access browser.runtime.id
     // This will throw if the context is invalidated
-    if (!chrome?.runtime?.id) {
+    if (!browser?.runtime?.id) {
       return false;
     }
     return true;
@@ -29,7 +31,8 @@ export function isContextInvalidatedError(error: unknown): boolean {
     return (
       error.message.includes('Extension context invalidated') ||
       error.message.includes('Cannot access') ||
-      error.message.includes('chrome.runtime')
+      error.message.includes('chrome.runtime') ||
+      error.message.includes('browser.runtime')
     );
   }
   return false;
@@ -63,27 +66,30 @@ export async function withContextCheck<T>(
 }
 
 /**
- * Safe wrapper for chrome.storage.local.get that handles context invalidation
+ * Safe wrapper for browser.storage.local.get that handles context invalidation
  */
 export async function safeStorageGet<T = any>(
   keys: string | string[],
   defaultValue: { [key: string]: T } = {}
 ): Promise<{ [key: string]: T }> {
   return withContextCheck(
-    () => chrome.storage.local.get(keys),
+    async () => {
+      const result = await browser.storage.local.get(keys);
+      return result as { [key: string]: T };
+    },
     defaultValue
   );
 }
 
 /**
- * Safe wrapper for chrome.storage.local.set that handles context invalidation
+ * Safe wrapper for browser.storage.local.set that handles context invalidation
  */
 export async function safeStorageSet(
   items: { [key: string]: any }
 ): Promise<boolean> {
   return withContextCheck(
     async () => {
-      await chrome.storage.local.set(items);
+      await browser.storage.local.set(items);
       return true;
     },
     false

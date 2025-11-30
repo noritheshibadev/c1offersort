@@ -3,6 +3,8 @@
  * Provides a unified API for sending and receiving messages across popup, content, and background scripts.
  */
 
+import browser from 'webextension-polyfill';
+import type { Runtime } from 'webextension-polyfill';
 import type {
   ExtensionMessage,
   PaginationProgressMessage,
@@ -15,7 +17,7 @@ export class MessageBus {
    */
   static async send<T extends ExtensionMessage>(message: T): Promise<unknown> {
     try {
-      return await chrome.runtime.sendMessage(message);
+      return await browser.runtime.sendMessage(message);
     } catch (error) {
       console.error('[MessageBus] Failed to send message:', error);
       throw error;
@@ -34,7 +36,7 @@ export class MessageBus {
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        return await chrome.tabs.sendMessage(tabId, message);
+        return await browser.tabs.sendMessage(tabId, message);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
@@ -63,7 +65,7 @@ export class MessageBus {
     message: T
   ): Promise<unknown> {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
       if (!tab.id) {
         throw new Error('No active tab found');
       }
@@ -81,11 +83,11 @@ export class MessageBus {
   static onMessage<T extends ExtensionMessage>(
     handler: (
       message: T,
-      sender: chrome.runtime.MessageSender,
+      sender: Runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ) => void | boolean | Promise<void>
   ): () => void {
-    const listener = (message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: unknown) => void) => {
+    const listener = (message: unknown, sender: Runtime.MessageSender, sendResponse: (response?: unknown) => void): boolean | Promise<void> => {
       try {
         const result = handler(message as T, sender, sendResponse);
         // Return true if handler is async or needs to send response later
@@ -95,18 +97,18 @@ export class MessageBus {
           });
           return true; // Keep channel open for async response
         }
-        return result;
+        return result === true; // Convert to boolean
       } catch (error) {
         console.error('[MessageBus] Message handler error:', error);
         return false;
       }
     };
 
-    chrome.runtime.onMessage.addListener(listener);
+    browser.runtime.onMessage.addListener(listener as any);
 
     // Return cleanup function
     return () => {
-      chrome.runtime.onMessage.removeListener(listener);
+      browser.runtime.onMessage.removeListener(listener as any);
     };
   }
 
@@ -117,7 +119,7 @@ export class MessageBus {
   static onMessageFromTab<T extends ExtensionMessage>(
     handler: (
       message: T,
-      sender: chrome.runtime.MessageSender,
+      sender: Runtime.MessageSender,
       sendResponse: (response?: unknown) => void
     ) => void | boolean | Promise<void>
   ): () => void {
@@ -165,7 +167,7 @@ export function createMessageListener<T extends ExtensionMessage>(
   typeGuard: (msg: unknown) => msg is T,
   handler: (
     message: T,
-    sender: chrome.runtime.MessageSender,
+    sender: Runtime.MessageSender,
     sendResponse: (response?: unknown) => void
   ) => void | boolean | Promise<void>
 ): () => void {
