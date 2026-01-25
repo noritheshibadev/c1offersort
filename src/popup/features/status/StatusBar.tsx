@@ -1,17 +1,19 @@
 import React from 'react';
 import { StatusMessage } from '../../components/StatusMessage';
 import { BuyMeCoffee } from '../../components/BuyMeCoffee';
+import { ExportButton } from '../../components/ExportButton';
 import { useOperations } from '../../context/OperationsContext';
 import type { SortResult } from '@/types';
 
 interface StatusBarProps {
   lastResult: SortResult | null;
+  hasSorted: boolean;
 }
 
 /**
- * StatusBar feature - displays status messages and support link
+ * StatusBar feature - displays status messages, export button, and support link
  */
-export const StatusBar: React.FC<StatusBarProps> = ({ lastResult }) => {
+export const StatusBar: React.FC<StatusBarProps> = ({ lastResult, hasSorted }) => {
   const { isSortLoading, sortProgress, isFilterLoading, loadAllProgress, showFavoritesOnly } = useOperations();
 
   return (
@@ -35,7 +37,18 @@ export const StatusBar: React.FC<StatusBarProps> = ({ lastResult }) => {
         showFavoritesOnly={showFavoritesOnly}
       />
 
-      <BuyMeCoffee />
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginTop: '0px',
+          gap: '4px',
+        }}
+      >
+        <BuyMeCoffee />
+        <ExportButton hasSorted={hasSorted} />
+      </div>
     </div>
   );
 };

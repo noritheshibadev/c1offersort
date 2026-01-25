@@ -4,6 +4,7 @@ import { injectFavorites, removeFavoritesStars } from '../modules/favorites/inje
 import { updateStarState } from '../modules/favorites/updateStarState';
 import { getWatcherCleanup } from '../state';
 import { buildSearchIndex, executeSearch, scrollToOffer, isSearchIndexReady } from '../modules/search';
+import { extractExportData } from '../modules/export';
 import { findAllTiles } from '../../shared/domHelpers';
 
 /**
@@ -134,6 +135,22 @@ export function setupMessageHandler(
             fullyPaginated: fullyPaginated.value,
             offerCount: findAllTiles().length,
           };
+        case 'GET_EXPORT_DATA':
+          console.log('[MessageHandler] Processing GET_EXPORT_DATA');
+          try {
+            const offers = extractExportData();
+            return {
+              success: true,
+              offers,
+            };
+          } catch (error) {
+            console.error('[MessageHandler] Export data extraction failed:', error);
+            return {
+              success: false,
+              offers: [],
+              error: error instanceof Error ? error.message : 'Failed to extract offer data',
+            };
+          }
         default:
           console.log('[MessageHandler] Unknown message type:', message.type);
           return { success: false, error: 'Unknown message type' };

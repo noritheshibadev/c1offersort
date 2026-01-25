@@ -94,6 +94,10 @@ export interface GetFilterProgressMessage {
   type: "GET_FILTER_PROGRESS";
 }
 
+export interface GetExportDataMessage {
+  type: "GET_EXPORT_DATA";
+}
+
 export type ExtensionMessage =
   | PaginationProgressMessage
   | SortingStartMessage
@@ -109,5 +113,6 @@ export type ExtensionMessage =
   | BuildSearchIndexMessage
   | GetPaginationStatusMessage
   | GetSortProgressMessage
-  | GetFilterProgressMessage;
+  | GetFilterProgressMessage
+  | GetExportDataMessage;
 

@@ -90,7 +90,7 @@ const AppInner: React.FC<AppInnerProps> = ({
       </div>
 
       {/* Status Bar */}
-      <StatusBar lastResult={lastResult} />
+      <StatusBar lastResult={lastResult} hasSorted={hasSorted} />
 
       {/* Invalid URL Overlay */}
       {!isValidUrl && <InvalidPageOverlay />}

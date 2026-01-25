@@ -192,11 +192,25 @@ export function extractMerchantName(tile: HTMLElement): string {
   return "Unknown Merchant";
 }
 
+// Pattern to match mileage text: "5X miles", "Up to 10X miles", "500 miles", etc.
+const MILEAGE_TEXT_PATTERN = /(?:Up to )?\d+X?\s+miles/i;
+
 export function extractMileageText(tile: HTMLElement): string {
-  // Use style attribute for mileage (green color: rgb(37, 129, 14))
+  // Strategy 1: Use known style selector (fastest, most common case)
   const mileageDiv = tile.querySelector(SELECTORS.mileageText) as HTMLElement;
   if (mileageDiv?.textContent) {
     return mileageDiv.textContent.trim();
+  }
+
+  // Strategy 2: Content-based search (most resilient)
+  // Search common heading/text elements for mileage pattern
+  const candidates = tile.querySelectorAll('h1, h2, h3, h4, span, p');
+  for (const el of candidates) {
+    const text = el.textContent?.trim() || '';
+    // Only match if the element's direct text matches (avoid parent elements that contain nested matches)
+    if (MILEAGE_TEXT_PATTERN.test(text) && text.length < 50) {
+      return text;
+    }
   }
 
   return "0 miles";

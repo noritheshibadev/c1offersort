@@ -23,6 +23,7 @@ import type {
   SearchResult,
   ExtensionMessage,
 } from '../types/messages';
+import type { ExportOffer } from '../shared/exportHelpers';
 
 /**
  * Response type for pagination status query
@@ -56,6 +57,15 @@ export interface SearchQueryResponse {
   results: SearchResult[];
   totalMatches: number;
   searchEnabled: boolean;
+  error?: string;
+}
+
+/**
+ * Response type for export data query
+ */
+export interface ExportDataResponse {
+  success: boolean;
+  offers: ExportOffer[];
   error?: string;
 }
 
@@ -309,6 +319,19 @@ class ChromeService {
   async getPaginationStatus(tabId: number): Promise<PaginationStatusResponse> {
     return this.sendToTab<PaginationStatusResponse>(tabId, {
       type: 'GET_PAGINATION_STATUS',
+    });
+  }
+
+  // ============================================================================
+  // EXPORT
+  // ============================================================================
+
+  /**
+   * Get all offer data for CSV export
+   */
+  async getExportData(tabId: number): Promise<ExportDataResponse> {
+    return this.sendToTab<ExportDataResponse>(tabId, {
+      type: 'GET_EXPORT_DATA',
     });
   }
 
