@@ -3,7 +3,7 @@
  * Used for type-safe message passing via chrome.runtime.sendMessage.
  */
 
-import type { OfferType } from "./index";
+import type { OfferType, ChannelType } from "./index";
 
 export interface PaginationProgressMessage {
   type: "PAGINATION_PROGRESS";
@@ -21,12 +21,14 @@ export interface SortRequestMessage {
   criteria: string;
   order: string;
   offerTypeFilter?: OfferType;
+  channelFilter?: ChannelType;
 }
 
 export interface FilterRequestMessage {
   type: "FILTER_REQUEST";
   showFavoritesOnly: boolean;
   offerTypeFilter: OfferType;
+  channelFilter?: ChannelType;
 }
 
 export interface InjectFavoritesRequestMessage {

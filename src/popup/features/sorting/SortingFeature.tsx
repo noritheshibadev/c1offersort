@@ -1,18 +1,19 @@
 import React, { useCallback } from 'react';
 import { CompactSortSelector } from '../../components/CompactSortSelector';
 import { OfferTypeFilter } from '../../components/OfferTypeFilter';
+import { ChannelFilter } from '../../components/ChannelFilter';
 import { SortButton } from '../../components/SortButton';
 import ErrorMessage from '../../components/ErrorMessage';
 import { useApp } from '../../context/AppContext';
 import { useOperations } from '../../context/OperationsContext';
 import { useError } from '../../context/ErrorContext';
 import { applyFavoritesFilterInActiveTab } from '../../services/applyFavoritesFilter';
-import type { SortConfig, OfferType } from '@/types';
+import type { SortConfig, OfferType, ChannelType } from '@/types';
 
 interface SortingFeatureProps {
   sortConfig: SortConfig;
   setSortConfig: (config: SortConfig) => void;
-  handleSort: (offerTypeFilter?: OfferType) => Promise<void>;
+  handleSort: (offerTypeFilter?: OfferType, channelFilter?: ChannelType) => Promise<void>;
   hasSorted: boolean;
 }
 
@@ -26,7 +27,7 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
   hasSorted,
 }) => {
   const { isValidUrl, currentTabId } = useApp();
-  const { isSortLoading, offerTypeFilter, setOfferTypeFilter, showFavoritesOnly } = useOperations();
+  const { isSortLoading, offerTypeFilter, setOfferTypeFilter, channelFilter, setChannelFilter, showFavoritesOnly } = useOperations();
   const { errorMessage, clearError } = useError();
 
   const handleSortConfigChange = useCallback(
@@ -37,19 +38,30 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
   );
 
   const handleSortWithFilter = useCallback(() => {
-    return handleSort(offerTypeFilter);
-  }, [handleSort, offerTypeFilter]);
+    return handleSort(offerTypeFilter, channelFilter);
+  }, [handleSort, offerTypeFilter, channelFilter]);
 
-  const handleFilterChange = useCallback(async (newFilter: OfferType) => {
+  const handleOfferTypeFilterChange = useCallback(async (newFilter: OfferType) => {
     if (newFilter === offerTypeFilter) return;
     setOfferTypeFilter(newFilter);
 
     if (hasSorted) {
-      await handleSort(newFilter);
+      await handleSort(newFilter, channelFilter);
     } else if (currentTabId) {
-      await applyFavoritesFilterInActiveTab(currentTabId, showFavoritesOnly, newFilter);
+      await applyFavoritesFilterInActiveTab(currentTabId, showFavoritesOnly, newFilter, channelFilter);
     }
-  }, [offerTypeFilter, setOfferTypeFilter, hasSorted, handleSort, currentTabId, showFavoritesOnly]);
+  }, [offerTypeFilter, setOfferTypeFilter, hasSorted, handleSort, currentTabId, showFavoritesOnly, channelFilter]);
+
+  const handleChannelFilterChange = useCallback(async (newFilter: ChannelType) => {
+    if (newFilter === channelFilter) return;
+    setChannelFilter(newFilter);
+
+    if (hasSorted) {
+      await handleSort(offerTypeFilter, newFilter);
+    } else if (currentTabId) {
+      await applyFavoritesFilterInActiveTab(currentTabId, showFavoritesOnly, offerTypeFilter, newFilter);
+    }
+  }, [channelFilter, setChannelFilter, hasSorted, handleSort, currentTabId, showFavoritesOnly, offerTypeFilter]);
 
   return (
     <div
@@ -68,7 +80,12 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
         />
         <OfferTypeFilter
           value={offerTypeFilter}
-          onChange={handleFilterChange}
+          onChange={handleOfferTypeFilterChange}
+          disabled={!isValidUrl || isSortLoading}
+        />
+        <ChannelFilter
+          value={channelFilter}
+          onChange={handleChannelFilterChange}
           disabled={!isValidUrl || isSortLoading}
         />
       </div>

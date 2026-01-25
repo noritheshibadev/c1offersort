@@ -3,10 +3,11 @@ import {
   extractMerchantName,
   parseMileageValue,
   detectOfferType,
+  detectChannelType,
   findMainContainer,
   findAllTiles,
 } from '@/shared/domHelpers';
-import type { SortResult, OfferType } from '@/types';
+import type { SortResult, OfferType, ChannelType } from '@/types';
 import { loadAllTiles } from '../pagination';
 import { getWatcherCleanup } from '../../state';
 
@@ -95,6 +96,7 @@ function performSort(
  * @param reinjectStarsCallback - Callback to re-inject stars after sorting
  * @param offerTypeFilter - Filter to apply after sorting ('all', 'multiplier', 'static')
  * @param progressState - In-memory progress tracking state (optional for backwards compatibility)
+ * @param channelFilter - Filter by channel: 'all', 'in-store', 'in-app', or 'online'
  * @returns Result object with success status, tiles processed count, and any errors
  */
 export async function executeSorting(
@@ -114,7 +116,8 @@ export async function executeSorting(
         totalOffers?: number;
       } | null;
     };
-  }
+  },
+  channelFilter: ChannelType = 'all'
 ): Promise<SortResult> {
   console.log('[Sorting] executeSorting called with criteria:', sortCriteria, 'order:', sortOrder);
 
@@ -191,17 +194,31 @@ export async function executeSorting(
     console.log('[Sorting] Final sort complete:', sortedTiles.length, 'tiles processed');
 
     let visibleCount = sortedTiles.length;
-    if (offerTypeFilter !== 'all') {
-      console.log('[Sorting] Applying offer type filter:', offerTypeFilter);
+    const hasFilters = offerTypeFilter !== 'all' || channelFilter !== 'all';
+
+    if (hasFilters) {
+      console.log('[Sorting] Applying filters - offerType:', offerTypeFilter, 'channel:', channelFilter);
       let visibleIndex = 0;
 
       await new Promise<void>(resolve => {
         requestAnimationFrame(() => {
           for (const item of sortedTiles) {
-            const mileageText = extractMileageText(item.element);
-            const tileOfferType = detectOfferType(mileageText);
+            // Check offer type filter
+            let matchesTypeFilter = true;
+            if (offerTypeFilter !== 'all') {
+              const mileageText = extractMileageText(item.element);
+              const tileOfferType = detectOfferType(mileageText);
+              matchesTypeFilter = tileOfferType === offerTypeFilter;
+            }
 
-            if (tileOfferType === offerTypeFilter) {
+            // Check channel filter
+            let matchesChannelFilter = true;
+            if (channelFilter !== 'all') {
+              const tileChannels = detectChannelType(item.element);
+              matchesChannelFilter = tileChannels.has(channelFilter);
+            }
+
+            if (matchesTypeFilter && matchesChannelFilter) {
               item.element.style.removeProperty('display');
               item.element.style.setProperty('order', String(visibleIndex), 'important');
               visibleIndex++;

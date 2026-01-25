@@ -318,3 +318,23 @@ export function findViewMoreButton(): HTMLButtonElement | null {
   console.log('[DOMHelpers] No "View More" button found');
   return null;
 }
+
+/**
+ * Detects the redemption channels for an offer tile.
+ * Parses the h2 element text (e.g., "In-Store & In-App", "Online", "In-Store & Online")
+ *
+ * @param tile - The offer tile HTMLElement
+ * @returns A Set of detected channels ('in-store', 'in-app', 'online')
+ */
+export function detectChannelType(tile: HTMLElement): Set<'in-store' | 'in-app' | 'online'> {
+  // Find the h2 element with channel text (uses Tailwind class for 13px text)
+  const h2 = tile.querySelector('h2.text-\\[13px\\]');
+  const text = h2?.textContent?.toLowerCase() || '';
+
+  const channels = new Set<'in-store' | 'in-app' | 'online'>();
+  if (text.includes('in-store') || text.includes('in store')) channels.add('in-store');
+  if (text.includes('in-app') || text.includes('in app')) channels.add('in-app');
+  if (text.includes('online')) channels.add('online');
+
+  return channels;
+}

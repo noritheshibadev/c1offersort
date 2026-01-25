@@ -7,14 +7,13 @@ import { chromeService } from '@/services/ChromeService';
 import { useApp } from '../../context/AppContext';
 import { useOperations } from '../../context/OperationsContext';
 import { useError } from '../../context/ErrorContext';
-import type { OfferType } from '@/types';
 
 /**
  * Custom hook for managing favorites feature state and logic
  */
 export function useFavoritesFeature() {
   const { currentUrl, isValidUrl, currentTabId, isTabIdLoading } = useApp();
-  const { setIsFavoritesLoading, setIsFilterLoading, setLoadAllProgress, showFavoritesOnly, setShowFavoritesOnly, offerTypeFilter, setOfferTypeFilter } = useOperations();
+  const { setIsFavoritesLoading, setIsFilterLoading, setLoadAllProgress, showFavoritesOnly, setShowFavoritesOnly, offerTypeFilter, channelFilter } = useOperations();
   const { setError } = useError();
 
   const { favorites, favoritesCount, refreshFavorites } = useFavorites(currentUrl);
@@ -91,7 +90,7 @@ export function useFavoritesFeature() {
     setShowFavoritesOnly(newShowFavoritesOnly);
 
     try {
-      const result = await applyFavoritesFilterInActiveTab(currentTabId!, newShowFavoritesOnly, offerTypeFilter);
+      const result = await applyFavoritesFilterInActiveTab(currentTabId!, newShowFavoritesOnly, offerTypeFilter, channelFilter);
 
       if (!result.success) {
         setError(
@@ -115,7 +114,7 @@ export function useFavoritesFeature() {
       setIsFilterLoading(false);
       setLoadAllProgress(null);
     }
-  }, [currentTabId, showFavoritesOnly, offerTypeFilter, setIsFilterLoading, setLoadAllProgress, setError, setShowFavoritesOnly]);
+  }, [currentTabId, showFavoritesOnly, offerTypeFilter, channelFilter, setIsFilterLoading, setLoadAllProgress, setError, setShowFavoritesOnly]);
 
   return {
     // State

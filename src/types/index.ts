@@ -1,6 +1,7 @@
 export type SortCriteria = "mileage" | "alphabetical";
 export type SortOrder = "desc" | "asc";
 export type OfferType = "all" | "multiplier" | "static";
+export type ChannelType = "all" | "in-store" | "in-app" | "online";
 
 export interface SortConfig {
   criteria: SortCriteria;

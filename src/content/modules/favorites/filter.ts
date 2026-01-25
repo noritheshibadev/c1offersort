@@ -2,6 +2,7 @@ import {
   extractMerchantTLD,
   extractMileageText,
   detectOfferType,
+  detectChannelType,
   findAllTiles,
   findMainContainer,
   countRealTiles,
@@ -9,20 +10,22 @@ import {
 import { getFavorites } from '@/shared/favoritesHelpers';
 import { loadAllTiles } from '../pagination';
 import { getWatcherCleanup } from '../../state';
-import type { OfferType } from '@/types';
+import type { OfferType, ChannelType } from '@/types';
 
 /**
- * Applies filters to show/hide offer tiles based on favorites and/or offer type.
+ * Applies filters to show/hide offer tiles based on favorites, offer type, and/or channel.
  *
  * @param showFavoritesOnly - If true, show only favorited offers
  * @param offerTypeFilter - Filter by offer type: 'all', 'multiplier', or 'static'
  * @param fullyPaginated - Reference to track if pagination is complete
+ * @param channelFilter - Filter by channel: 'all', 'in-store', 'in-app', or 'online'
  * @returns Result with success status, tile counts, and list of favorites not currently visible
  */
 export async function applyFavoritesFilter(
   showFavoritesOnly: boolean,
   offerTypeFilter: OfferType,
-  fullyPaginated: { value: boolean }
+  fullyPaginated: { value: boolean },
+  channelFilter: ChannelType = 'all'
 ): Promise<{
   success: boolean;
   tilesShown: number;
@@ -31,7 +34,7 @@ export async function applyFavoritesFilter(
   error?: string;
 }> {
   try {
-    const isFilteringActive = showFavoritesOnly || offerTypeFilter !== 'all';
+    const isFilteringActive = showFavoritesOnly || offerTypeFilter !== 'all' || channelFilter !== 'all';
 
     if (showFavoritesOnly) {
       await loadAllTiles(fullyPaginated);
@@ -66,8 +69,15 @@ export async function applyFavoritesFilter(
         matchesTypeFilter = tileOfferType === offerTypeFilter;
       }
 
+      let matchesChannelFilter = true;
+      if (channelFilter !== 'all') {
+        const tileChannels = detectChannelType(el);
+        // Inclusive match: show tile if it includes the selected channel
+        matchesChannelFilter = tileChannels.has(channelFilter);
+      }
+
       const matchesFavoritesFilter = !showFavoritesOnly || isFavorited;
-      const shouldShow = matchesFavoritesFilter && matchesTypeFilter;
+      const shouldShow = matchesFavoritesFilter && matchesTypeFilter && matchesChannelFilter;
 
       if (shouldShow) {
         el.style.removeProperty('display');

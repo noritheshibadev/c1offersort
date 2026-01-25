@@ -4,7 +4,7 @@ import { InvalidPageOverlay } from './components/InvalidPageOverlay';
 import { HelpButton } from './components/HelpButton';
 import { FeatureErrorBoundary } from './components/FeatureErrorBoundary';
 import { COLORS } from '@/utils/constants';
-import type { SortConfig, SortResult, OfferType } from '@/types';
+import type { SortConfig, SortResult, OfferType, ChannelType } from '@/types';
 
 // Context providers
 import { MessageBusProvider } from './context/MessageBusContext';
@@ -21,7 +21,7 @@ import { StatusBar } from './features/status/StatusBar';
 interface AppInnerProps {
   sortConfig: SortConfig;
   setSortConfig: (config: SortConfig) => void;
-  handleSort: (offerTypeFilter?: OfferType) => Promise<void>;
+  handleSort: (offerTypeFilter?: OfferType, channelFilter?: ChannelType) => Promise<void>;
   lastResult: SortResult | null;
   hasSorted: boolean;
 }

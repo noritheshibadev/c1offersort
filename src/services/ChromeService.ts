@@ -18,6 +18,7 @@ import type {
   SortResult,
   FavoritesResult,
   OfferType,
+  ChannelType,
 } from '../types';
 import type {
   SearchResult,
@@ -192,13 +193,15 @@ class ChromeService {
   async sendSortRequest(
     tabId: number,
     config: SortConfig,
-    offerTypeFilter: OfferType = 'all'
+    offerTypeFilter: OfferType = 'all',
+    channelFilter: ChannelType = 'all'
   ): Promise<SortResult> {
     return this.sendToTab<SortResult>(tabId, {
       type: 'SORT_REQUEST',
       criteria: config.criteria,
       order: config.order,
       offerTypeFilter,
+      channelFilter,
     });
   }
 
@@ -245,12 +248,14 @@ class ChromeService {
   async sendFilterRequest(
     tabId: number,
     showFavoritesOnly: boolean,
-    offerTypeFilter: OfferType = 'all'
+    offerTypeFilter: OfferType = 'all',
+    channelFilter: ChannelType = 'all'
   ): Promise<FavoritesResult> {
     return this.sendToTab<FavoritesResult>(tabId, {
       type: 'FILTER_REQUEST',
       showFavoritesOnly,
       offerTypeFilter,
+      channelFilter,
     });
   }
 
