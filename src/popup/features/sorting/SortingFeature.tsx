@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { CompactSortSelector } from '../../components/CompactSortSelector';
 import { OfferTypeFilter } from '../../components/OfferTypeFilter';
 import { ChannelFilter } from '../../components/ChannelFilter';
@@ -29,6 +29,7 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
   const { isValidUrl, currentTabId } = useApp();
   const { isSortLoading, offerTypeFilter, setOfferTypeFilter, channelFilter, setChannelFilter, showFavoritesOnly } = useOperations();
   const { errorMessage, clearError } = useError();
+  const [channelFilterExpanded, setChannelFilterExpanded] = useState(false);
 
   const handleSortConfigChange = useCallback(
     (config: SortConfig) => {
@@ -63,6 +64,15 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
     }
   }, [channelFilter, setChannelFilter, hasSorted, handleSort, currentTabId, showFavoritesOnly, offerTypeFilter]);
 
+  const getChannelLabel = (channel: ChannelType): string => {
+    switch (channel) {
+      case 'in-store': return 'In-Store';
+      case 'in-app': return 'In-App';
+      case 'online': return 'Online';
+      default: return '';
+    }
+  };
+
   return (
     <div
       style={{
@@ -83,11 +93,36 @@ export const SortingFeature: React.FC<SortingFeatureProps> = ({
           onChange={handleOfferTypeFilterChange}
           disabled={!isValidUrl || isSortLoading}
         />
-        <ChannelFilter
-          value={channelFilter}
-          onChange={handleChannelFilterChange}
+
+        {/* Channel filter expand button */}
+        <button
+          className={`channel-expand-btn ${channelFilterExpanded ? 'expanded' : ''} ${channelFilter !== 'all' ? 'has-filter' : ''}`}
+          onClick={() => setChannelFilterExpanded(!channelFilterExpanded)}
           disabled={!isValidUrl || isSortLoading}
-        />
+          aria-expanded={channelFilterExpanded}
+          aria-controls="channel-filter-panel"
+        >
+          <span>
+            Channel Filter
+            {channelFilter !== 'all' && !channelFilterExpanded && (
+              <span className="channel-active-badge">
+                {getChannelLabel(channelFilter)}
+              </span>
+            )}
+          </span>
+          <span className="channel-expand-arrow">▼</span>
+        </button>
+
+        {/* Collapsible channel filter dropdown */}
+        {channelFilterExpanded && (
+          <div id="channel-filter-panel" className="channel-filter-panel">
+            <ChannelFilter
+              value={channelFilter}
+              onChange={handleChannelFilterChange}
+              disabled={!isValidUrl || isSortLoading}
+            />
+          </div>
+        )}
       </div>
       <SortButton
         onClick={handleSortWithFilter}

@@ -9,15 +9,15 @@ interface ChannelFilterProps {
 }
 
 const FILTER_OPTIONS: { value: ChannelType; label: string }[] = [
-  { value: 'all', label: 'All' },
+  { value: 'all', label: 'All Channels' },
   { value: 'in-store', label: 'In-Store' },
   { value: 'in-app', label: 'In-App' },
   { value: 'online', label: 'Online' },
 ];
 
 /**
- * Toggle button group for filtering offers by redemption channel
- * Options: All, In-Store, In-App, Online
+ * Dropdown for filtering offers by redemption channel
+ * Options: All Channels, In-Store, In-App, Online
  * Uses inclusive matching: "In-Store" shows all offers with in-store channel
  */
 export const ChannelFilter: React.FC<ChannelFilterProps> = ({
@@ -25,22 +25,25 @@ export const ChannelFilter: React.FC<ChannelFilterProps> = ({
   onChange,
   disabled = false,
 }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange(e.target.value as ChannelType);
+  };
+
   return (
     <div className={`channel-filter ${disabled ? 'disabled' : ''}`}>
-      <span className="channel-filter-label">Channel:</span>
-      <div className="channel-filter-buttons">
+      <label className="channel-filter-label">Channel:</label>
+      <select
+        className="channel-filter-dropdown"
+        value={value}
+        onChange={handleChange}
+        disabled={disabled}
+      >
         {FILTER_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            className={`channel-filter-btn ${value === option.value ? 'active' : ''}`}
-            onClick={() => onChange(option.value)}
-            disabled={disabled}
-            aria-pressed={value === option.value}
-          >
+          <option key={option.value} value={option.value}>
             {option.label}
-          </button>
+          </option>
         ))}
-      </div>
+      </select>
     </div>
   );
 };

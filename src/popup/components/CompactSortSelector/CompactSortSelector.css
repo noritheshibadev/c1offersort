@@ -103,3 +103,72 @@
 .order-button:active {
   transform: scale(0.95);
 }
+
+/* Channel filter expand button */
+.channel-expand-btn {
+  width: 100%;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-glass-subtle);
+  padding: 8px 12px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-main);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.channel-expand-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--border-glass-light);
+  background-color: var(--glass-white-1);
+}
+
+.channel-expand-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.channel-expand-btn.expanded {
+  border-color: var(--yellow-glass-border);
+  color: var(--color-yellow);
+}
+
+.channel-expand-arrow {
+  font-size: var(--text-xs);
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.channel-expand-btn.expanded .channel-expand-arrow {
+  transform: rotate(180deg);
+}
+
+/* Channel filter panel animation */
+.channel-filter-panel {
+  animation: slideDown var(--duration-slow) var(--ease-out);
+  overflow: hidden;
+}
+
+/* Active filter indicator when collapsed */
+.channel-expand-btn.has-filter:not(.expanded) {
+  border-color: var(--yellow-glass-border);
+}
+
+.channel-active-badge {
+  margin-left: 8px;
+  background: var(--yellow-glass-bg);
+  color: var(--color-yellow);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  border: 1px solid var(--color-yellow);
+}
