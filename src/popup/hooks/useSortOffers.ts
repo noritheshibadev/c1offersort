@@ -195,11 +195,21 @@ export function useSortOffers(): UseSortOffersResult {
         console.error("Error details:", error.stack);
       }
 
+      // Translate the cryptic Chrome connection error into actionable guidance.
+      // This is the last-resort path if on-demand content-script injection failed.
+      let errorMessage = error instanceof Error ? error.message : "Unknown error";
+      if (
+        errorMessage.includes("Could not establish connection") ||
+        errorMessage.includes("Receiving end does not exist")
+      ) {
+        errorMessage = "Please refresh the Capital One offers page and try again.";
+      }
+
       setLastResult({
         success: false,
         tilesProcessed: 0,
         pagesLoaded: 0,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: errorMessage,
       });
     } finally {
       setIsLoading(false);

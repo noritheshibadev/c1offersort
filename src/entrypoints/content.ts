@@ -12,8 +12,7 @@ import { VALID_URLS } from '@/utils/constants';
 
 export default defineContentScript({
   matches: [
-    'https://capitaloneoffers.com/feed*',
-    'https://capitaloneoffers.com/c1-offers*',
+    'https://capitaloneoffers.com/*',
   ],
   runAt: 'document_idle',
 

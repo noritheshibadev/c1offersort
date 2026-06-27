@@ -43,12 +43,16 @@ export function countTiles(): number {
     const container = getContainer();
     if (container) {
       const tiles = container.querySelectorAll(SELECTORS.offerTile);
-      console.log('[Pagination] Counted', tiles.length, 'tiles using layout selector');
-      return tiles.length;
+      if (tiles.length > 0) {
+        console.log('[Pagination] Counted', tiles.length, 'tiles using layout selector');
+        return tiles.length;
+      }
+      // Container found but CSS selector returned 0 — classes may have changed, fall through to data-testid
+      console.log('[Pagination] CSS tile selector returned 0, trying data-testid fallback');
     }
   }
 
-  // Fallback: use data-testid (legacy method)
+  // Fallback: use data-testid (more stable across Capital One page redesigns)
   const allTiles = document.querySelectorAll('[data-testid^="feed-tile-"]');
   let count = 0;
   for (const tile of allTiles) {
@@ -57,7 +61,7 @@ export function countTiles(): number {
       count++;
     }
   }
-  console.log('[Pagination] Counted', count, 'tiles using fallback data-testid method');
+  console.log('[Pagination] Counted', count, 'tiles using data-testid method');
   return count;
 }
 

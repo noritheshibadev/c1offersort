@@ -291,16 +291,22 @@ export function findMainContainer(): HTMLElement | null {
 export function findAllTiles(suppressWarning = false): HTMLElement[] {
   const container = findMainContainer();
 
-  if (!container) {
-    if (!suppressWarning) {
-      console.warn('[DOMHelpers] Cannot find tiles - no container found');
+  if (container) {
+    const tiles = Array.from(container.querySelectorAll(SELECTORS.offerTile)) as HTMLElement[];
+    if (tiles.length > 0) {
+      return tiles;
     }
-    return [];
+    // Container found but CSS selector returned 0 — fall through to data-testid fallback
+    console.warn('[DOMHelpers] CSS tile selector returned 0, trying data-testid fallback');
+  } else if (!suppressWarning) {
+    console.warn('[DOMHelpers] Cannot find tiles - no container found, trying data-testid fallback');
   }
 
-  const tiles = Array.from(container.querySelectorAll(SELECTORS.offerTile)) as HTMLElement[];
-  // PERFORMANCE: Don't log on every call (called 20+ times during sort)
-  return tiles;
+  // Fallback: use data-testid (more stable across Capital One page redesigns)
+  return Array.from(document.querySelectorAll('[data-testid^="feed-tile-"]')).filter((tile) => {
+    const testId = tile.getAttribute('data-testid') || '';
+    return !testId.includes('skeleton') && !testId.includes('carousel');
+  }) as HTMLElement[];
 }
 
 export function findViewMoreButton(): HTMLButtonElement | null {

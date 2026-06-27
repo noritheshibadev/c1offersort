@@ -18,9 +18,11 @@ describe("typeGuards", () => {
     it("returns false for invalid URLs", () => {
       expect(isValidCapitalOneUrl("https://example.com")).toBe(false);
       expect(isValidCapitalOneUrl("https://google.com")).toBe(false);
-      expect(isValidCapitalOneUrl("https://capitaloneoffers.com/other")).toBe(
-        false
-      );
+    });
+
+    it("returns true for any capitaloneoffers.com path", () => {
+      expect(isValidCapitalOneUrl("https://capitaloneoffers.com/home")).toBe(true);
+      expect(isValidCapitalOneUrl("https://capitaloneoffers.com/shopping")).toBe(true);
     });
 
     it("returns false for undefined", () => {
@@ -40,10 +42,8 @@ describe("typeGuards", () => {
       );
     });
 
-    it("is case-sensitive for security", () => {
-      expect(
-        isValidCapitalOneUrl("https://capitaloneoffers.com/FEED")
-      ).toBe(false);
+    it("is case-sensitive for the domain", () => {
+      expect(isValidCapitalOneUrl("https://CAPITALONEOFFERS.COM/feed")).toBe(false);
     });
 
     it("prevents subdomain spoofing", () => {

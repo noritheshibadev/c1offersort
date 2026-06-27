@@ -25,7 +25,16 @@ export class MessageBus {
   }
 
   /**
-   * Send a message to a specific tab with retry logic
+   * Send a message to a specific tab with retry logic.
+   *
+   * If the content script isn't present in the tab (Chrome throws
+   * "Could not establish connection. Receiving end does not exist."), this
+   * recovers by programmatically injecting the content script and retrying.
+   * That happens when:
+   *  - Capital One's SPA loaded at an entry URL that didn't trigger injection,
+   *    or client-side-routed to the offers view without a full navigation, or
+   *  - the tab was already open when the extension was installed/updated, which
+   *    orphans the old content script (the classic "worked before, now broken").
    */
   static async sendToTab<T extends ExtensionMessage>(
     tabId: number,
@@ -33,6 +42,7 @@ export class MessageBus {
     retries = 2
   ): Promise<unknown> {
     let lastError: Error | undefined;
+    let didInject = false;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
@@ -45,6 +55,19 @@ export class MessageBus {
                                    lastError.message.includes('Receiving end does not exist');
 
         if (isConnectionError && attempt < retries) {
+          // First recovery attempt: the content script isn't listening, so inject
+          // it on demand (requires the `scripting` permission, granted for the
+          // active tab via `activeTab` when the user opens the popup).
+          if (!didInject) {
+            didInject = true;
+            const injected = await this.injectContentScript(tabId);
+            if (injected) {
+              // Give the freshly injected script time to register its listener
+              await new Promise(resolve => setTimeout(resolve, 300));
+              continue;
+            }
+          }
+
           console.warn(`[MessageBus] Connection attempt ${attempt + 1} failed, retrying in 100ms...`);
           await new Promise(resolve => setTimeout(resolve, 100));
           continue;
@@ -56,6 +79,30 @@ export class MessageBus {
     }
 
     throw lastError || new Error('Failed to send message');
+  }
+
+  /**
+   * Programmatically inject the content script into a tab.
+   * Used as a recovery path when no content script is listening.
+   * @returns true if injection succeeded, false otherwise
+   */
+  private static async injectContentScript(tabId: number): Promise<boolean> {
+    try {
+      if (!browser.scripting?.executeScript) {
+        console.warn('[MessageBus] scripting API unavailable, cannot inject content script');
+        return false;
+      }
+      console.warn('[MessageBus] No content script in tab, injecting on demand...');
+      await browser.scripting.executeScript({
+        target: { tabId },
+        files: ['content-scripts/content.js'],
+      });
+      console.log('[MessageBus] Content script injected successfully');
+      return true;
+    } catch (injectError) {
+      console.error('[MessageBus] Failed to inject content script:', injectError);
+      return false;
+    }
   }
 
   /**

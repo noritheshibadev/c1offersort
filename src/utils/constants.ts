@@ -10,6 +10,9 @@
 export const VALID_URLS = [
   "https://capitaloneoffers.com/feed",
   "https://capitaloneoffers.com/c1-offers",
+  "https://capitaloneoffers.com/home",
+  "https://capitaloneoffers.com/shopping",
+  "https://capitaloneoffers.com/offers",
 ] as const;
 
 /**
@@ -63,7 +66,7 @@ export const PAGINATION_CONFIG = {
   /** Maximum pagination attempts */
   MAX_ATTEMPTS: 50,
   /** Maximum consecutive failures before stopping */
-  MAX_CONSECUTIVE_FAILURES: 3,
+  MAX_CONSECUTIVE_FAILURES: 5,
   /** Number of response times to average for adaptive delay */
   HISTORY_SIZE: 5,
   /** Polling interval for checking new tiles */
