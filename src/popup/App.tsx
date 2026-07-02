@@ -99,6 +99,40 @@ const AppInner: React.FC<AppInnerProps> = ({
 };
 
 /**
+ * Bridges useSortOffers output into OperationsProvider and AppInner.
+ *
+ * Must live *inside* MessageBusProvider so useSortOffers can subscribe to
+ * progress messages via useMessageSubscription. Keeping this as an inner
+ * component is what lets us route the sort state through the provider tree
+ * without a top-level listener bypassing the message bus.
+ */
+const SortStateProvider: React.FC = () => {
+  const {
+    isLoading,
+    progressUpdate,
+    sortConfig,
+    setSortConfig,
+    handleSort,
+    lastResult,
+  } = useSortOffers();
+
+  return (
+    <OperationsProvider
+      isSortLoading={isLoading}
+      sortProgress={progressUpdate}
+    >
+      <AppInner
+        sortConfig={sortConfig}
+        setSortConfig={setSortConfig}
+        handleSort={handleSort}
+        lastResult={lastResult}
+        hasSorted={lastResult?.success === true}
+      />
+    </OperationsProvider>
+  );
+};
+
+/**
  * Main application component for the C1 Offers Sorter extension popup.
  * Provides context providers and renders the main UI.
  *
@@ -113,32 +147,11 @@ const AppInner: React.FC<AppInnerProps> = ({
 const App: React.FC = () => {
   console.log('[App] Component mounted');
 
-  // Call useSortOffers once to get all sort-related state
-  const {
-    isLoading,
-    progressUpdate,
-    sortConfig,
-    setSortConfig,
-    handleSort,
-    lastResult,
-  } = useSortOffers();
-
   return (
     <MessageBusProvider>
       <ErrorProvider>
         <AppProvider>
-          <OperationsProvider
-            isSortLoading={isLoading}
-            sortProgress={progressUpdate}
-          >
-            <AppInner
-              sortConfig={sortConfig}
-              setSortConfig={setSortConfig}
-              handleSort={handleSort}
-              lastResult={lastResult}
-              hasSorted={lastResult?.success === true}
-            />
-          </OperationsProvider>
+          <SortStateProvider />
         </AppProvider>
       </ErrorProvider>
     </MessageBusProvider>

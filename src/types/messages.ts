@@ -3,7 +3,7 @@
  * Used for type-safe message passing via chrome.runtime.sendMessage.
  */
 
-import type { OfferType, ChannelType } from "./index";
+import type { OfferType, ChannelType, SortResult } from "./index";
 
 export interface PaginationProgressMessage {
   type: "PAGINATION_PROGRESS";
@@ -47,11 +47,7 @@ export interface UpdateStarStateMessage {
 
 export interface SortCompleteMessage {
   type: "SORT_COMPLETE";
-  result?: {
-    success: boolean;
-    sortedCount: number;
-    errors?: string[];
-  };
+  result?: SortResult;
 }
 
 export interface SearchQueryMessage {
@@ -100,6 +96,10 @@ export interface GetExportDataMessage {
   type: "GET_EXPORT_DATA";
 }
 
+export interface LoadAllRequestMessage {
+  type: "LOAD_ALL_REQUEST";
+}
+
 export type ExtensionMessage =
   | PaginationProgressMessage
   | SortingStartMessage
@@ -116,5 +116,25 @@ export type ExtensionMessage =
   | GetPaginationStatusMessage
   | GetSortProgressMessage
   | GetFilterProgressMessage
+  | GetExportDataMessage
+  | LoadAllRequestMessage;
+
+/**
+ * Messages handled by the content script (inbound from popup).
+ * Excludes messages the content script only emits (e.g. progress broadcasts).
+ */
+export type ContentInboundMessage =
+  | SortRequestMessage
+  | FilterRequestMessage
+  | LoadAllRequestMessage
+  | InjectFavoritesRequestMessage
+  | RemoveFavoritesRequestMessage
+  | UpdateStarStateMessage
+  | GetSortProgressMessage
+  | GetFilterProgressMessage
+  | BuildSearchIndexMessage
+  | SearchQueryMessage
+  | ScrollToOfferMessage
+  | GetPaginationStatusMessage
   | GetExportDataMessage;
 

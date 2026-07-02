@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, type Re
 import { chromeService } from '@/services/ChromeService';
 import type { PaginationProgressMessage } from '@/types/messages';
 import type { OfferType, ChannelType } from '@/types';
+import type { SortProgress, FilterProgress } from '@/types/progress';
 import { useApp } from './AppContext';
 
 /**
@@ -10,12 +11,7 @@ import { useApp } from './AppContext';
 interface OperationsContextValue {
   // Sort operation
   isSortLoading: boolean;
-  sortProgress: {
-    type: 'pagination' | 'sorting';
-    offersLoaded?: number;
-    pagesLoaded?: number;
-    totalOffers?: number;
-  } | null;
+  sortProgress: SortProgress | null;
 
   // Favorites operations
   isFavoritesLoading: boolean;
@@ -33,11 +29,8 @@ interface OperationsContextValue {
   setChannelFilter: (filter: ChannelType) => void;
 
   // Pagination progress (for "Load All" operations)
-  loadAllProgress: {
-    offersLoaded: number;
-    pagesLoaded: number;
-  } | null;
-  setLoadAllProgress: (progress: { offersLoaded: number; pagesLoaded: number } | null) => void;
+  loadAllProgress: FilterProgress | null;
+  setLoadAllProgress: (progress: FilterProgress | null) => void;
 }
 
 const OperationsContext = createContext<OperationsContextValue | undefined>(undefined);
@@ -59,10 +52,7 @@ export const OperationsProvider: React.FC<OperationsProviderProps> = ({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [offerTypeFilter, setOfferTypeFilter] = useState<OfferType>('all');
   const [channelFilter, setChannelFilter] = useState<ChannelType>('all');
-  const [loadAllProgress, setLoadAllProgress] = useState<{
-    offersLoaded: number;
-    pagesLoaded: number;
-  } | null>(null);
+  const [loadAllProgress, setLoadAllProgress] = useState<FilterProgress | null>(null);
 
   // Query filter progress after tab is ready
   useEffect(() => {
@@ -74,11 +64,8 @@ export const OperationsProvider: React.FC<OperationsProviderProps> = ({
 
         if (response && response.isActive) {
           setIsFilterLoading(true);
-          if (response.progress && response.progress.offersLoaded !== undefined && response.progress.pagesLoaded !== undefined) {
-            setLoadAllProgress({
-              offersLoaded: response.progress.offersLoaded,
-              pagesLoaded: response.progress.pagesLoaded,
-            });
+          if (response.progress) {
+            setLoadAllProgress(response.progress);
           }
         }
       } catch (error) {

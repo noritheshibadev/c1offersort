@@ -43,7 +43,10 @@
   font-weight: 600;
   font-family: var(--font-main);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .feature-error-boundary__button:hover {

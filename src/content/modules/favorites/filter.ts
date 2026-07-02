@@ -123,9 +123,10 @@ export async function applyFavoritesFilter(
     }
 
     if (showFavoritesOnly) {
+      const favoritesByTLD = new Map(favorites.map((fav) => [fav.merchantTLD, fav]));
       favoritedTLDs.forEach((tld) => {
         if (!foundFavorites.has(tld)) {
-          const favorite = favorites.find((fav) => fav.merchantTLD === tld);
+          const favorite = favoritesByTLD.get(tld);
           if (favorite) {
             missingFavorites.push(favorite.merchantName);
           }

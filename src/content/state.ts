@@ -4,23 +4,17 @@
  * across multiple content script modules.
  */
 
+import type { ProgressState } from "../types/progress";
+
 // In-memory progress tracking (no storage writes)
-export const progressState = {
+export const progressState: ProgressState = {
   sort: {
     isActive: false,
-    progress: null as {
-      type: 'pagination' | 'sorting';
-      offersLoaded?: number;
-      pagesLoaded?: number;
-      totalOffers?: number;
-    } | null,
+    progress: null,
   },
   filter: {
     isActive: false,
-    progress: null as {
-      offersLoaded: number;
-      pagesLoaded: number;
-    } | null,
+    progress: null,
   },
 };
 

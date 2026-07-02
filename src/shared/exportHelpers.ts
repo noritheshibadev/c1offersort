@@ -12,14 +12,20 @@ export interface ExportOffer {
 
 /**
  * Escapes a value for CSV format
+ * - Neutralizes leading formula characters (=, +, -, @, tab, CR) by prefixing '
+ *   so spreadsheet apps treat the cell as text, not a formula.
  * - Wraps in quotes if contains comma, quote, or newline
  * - Doubles any existing quotes
  */
 function escapeCSV(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
+  let escaped = value;
+  if (/^[=+\-@\t\r]/.test(escaped)) {
+    escaped = `'${escaped}`;
   }
-  return value;
+  if (escaped.includes(',') || escaped.includes('"') || escaped.includes('\n')) {
+    return `"${escaped.replace(/"/g, '""')}"`;
+  }
+  return escaped;
 }
 
 /**

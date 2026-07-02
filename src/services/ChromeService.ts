@@ -24,6 +24,10 @@ import type {
   SearchResult,
   ExtensionMessage,
 } from '../types/messages';
+import type {
+  SortProgressState,
+  FilterProgressState,
+} from '../types/progress';
 import type { ExportOffer } from '../shared/exportHelpers';
 
 /**
@@ -70,18 +74,8 @@ export interface ExportDataResponse {
   error?: string;
 }
 
-/**
- * Progress state for sort/filter operations
- */
-export interface ProgressState {
-  isActive: boolean;
-  progress: {
-    type: 'pagination' | 'sorting';
-    offersLoaded?: number;
-    pagesLoaded?: number;
-    totalOffers?: number;
-  } | null;
-}
+// Progress state types (SortProgressState / FilterProgressState) are imported
+// from '../types/progress' — see that module for the shared shape.
 
 /**
  * Storage keys used by the extension
@@ -208,9 +202,9 @@ class ChromeService {
   /**
    * Query the current sort progress (for when popup reopens during sort)
    */
-  async getSortProgress(tabId: number): Promise<ProgressState | null> {
+  async getSortProgress(tabId: number): Promise<SortProgressState | null> {
     try {
-      const response = await this.sendToTab<ProgressState>(tabId, {
+      const response = await this.sendToTab<SortProgressState>(tabId, {
         type: 'GET_SORT_PROGRESS',
       });
       return response;
@@ -262,9 +256,9 @@ class ChromeService {
   /**
    * Query the current filter progress (for when popup reopens during filter)
    */
-  async getFilterProgress(tabId: number): Promise<ProgressState | null> {
+  async getFilterProgress(tabId: number): Promise<FilterProgressState | null> {
     try {
-      const response = await this.sendToTab<ProgressState>(tabId, {
+      const response = await this.sendToTab<FilterProgressState>(tabId, {
         type: 'GET_FILTER_PROGRESS',
       });
       return response;

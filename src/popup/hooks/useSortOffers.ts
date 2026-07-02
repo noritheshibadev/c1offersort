@@ -1,15 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { SortConfig, SortResult, OfferType, ChannelType } from "../../types";
+import type { SortProgress } from "../../types/progress";
+import type { ExtensionMessage } from "../../types/messages";
 import { isValidCapitalOneUrl } from "../../utils/typeGuards";
 import { isSortingError } from "../../utils/errors";
 import { chromeService } from "@/services/ChromeService";
+import { useMessageSubscription } from "../context/MessageBusContext";
 
-interface ProgressUpdate {
-  type: "pagination" | "sorting";
-  offersLoaded?: number;
-  pagesLoaded?: number;
-  totalOffers?: number;
-}
+type ProgressUpdate = SortProgress;
 
 interface UseSortOffersResult {
   isLoading: boolean;
@@ -28,11 +26,13 @@ interface UseSortOffersResult {
  * - Loading state during sort operations
  * - Progress updates from the injected sorting script (pagination and sorting phases)
  * - Result tracking with error handling
- * - Message listener for real-time progress updates from content script
+ * - Progress subscriptions via MessageBusContext (single shared listener for the app)
  *
- * Progress updates are throttled to max one update per 200ms to avoid excessive re-renders.
+ * Pagination progress updates are throttled to at most one per 200ms to avoid
+ * excessive re-renders.
  *
- * @returns Sort state and handlers for the UI
+ * IMPORTANT: This hook uses useMessageSubscription and must run *inside*
+ * MessageBusProvider. See SortStateProvider in App.tsx.
  */
 export function useSortOffers(): UseSortOffersResult {
   const [isLoading, setIsLoading] = useState(false);
@@ -65,84 +65,36 @@ export function useSortOffers(): UseSortOffersResult {
     queryProgress();
   }, []);
 
-  const setIsLoadingRef = useRef(setIsLoading);
-  const setProgressUpdateRef = useRef(setProgressUpdate);
-  const setLastResultRef = useRef(setLastResult);
+  useMessageSubscription<ExtensionMessage>("PAGINATION_PROGRESS", (message) => {
+    if (message.type !== "PAGINATION_PROGRESS") return;
 
-  // Update refs when setters change (setState functions are stable, so this rarely re-runs)
-  useEffect(() => {
-    setIsLoadingRef.current = setIsLoading;
-    setProgressUpdateRef.current = setProgressUpdate;
-    setLastResultRef.current = setLastResult;
-  }, [setIsLoading, setProgressUpdate, setLastResult]);
+    const now = Date.now();
+    if (now - lastUpdateTimeRef.current < 200) return;
+    lastUpdateTimeRef.current = now;
 
-  useEffect(() => {
-    if (!chrome?.runtime?.onMessage) {
-      console.error('[useSortOffers] chrome.runtime.onMessage not available');
-      return;
+    setProgressUpdate({
+      type: "pagination",
+      offersLoaded: message.offersLoaded,
+      pagesLoaded: message.pagesLoaded,
+    });
+  });
+
+  useMessageSubscription<ExtensionMessage>("SORTING_START", (message) => {
+    if (message.type !== "SORTING_START") return;
+    setProgressUpdate({
+      type: "sorting",
+      totalOffers: message.totalOffers,
+    });
+  });
+
+  useMessageSubscription<ExtensionMessage>("SORT_COMPLETE", (message) => {
+    if (message.type !== "SORT_COMPLETE") return;
+    setIsLoading(false);
+    setProgressUpdate(null);
+    if (message.result) {
+      setLastResult(message.result);
     }
-
-    const messageListener = (
-      message: unknown,
-      _sender: chrome.runtime.MessageSender,
-      _sendResponse: (response?: any) => void
-    ) => {
-      if (typeof message !== "object" || message === null || !("type" in message)) {
-        return;
-      }
-
-      const msg = message as {
-        type: string;
-        offersLoaded?: number;
-        pagesLoaded?: number;
-        totalOffers?: number;
-      };
-
-      const now = Date.now();
-      const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
-
-      if (msg.type === "PAGINATION_PROGRESS") {
-        if (timeSinceLastUpdate < 200) return;
-        if (typeof msg.offersLoaded !== "number" || typeof msg.pagesLoaded !== "number") {
-          return;
-        }
-
-        console.log('[useSortOffers] Received pagination progress:', msg.offersLoaded, 'offers,', msg.pagesLoaded, 'pages');
-        lastUpdateTimeRef.current = now;
-        setProgressUpdateRef.current({
-          type: "pagination",
-          offersLoaded: msg.offersLoaded,
-          pagesLoaded: msg.pagesLoaded,
-        });
-      } else if (msg.type === "SORTING_START") {
-        if (typeof msg.totalOffers !== "number") {
-          return;
-        }
-
-        console.log('[useSortOffers] Received sorting start:', msg.totalOffers, 'offers');
-        setProgressUpdateRef.current({
-          type: "sorting",
-          totalOffers: msg.totalOffers,
-        });
-      } else if (msg.type === "SORT_COMPLETE") {
-        console.log('[useSortOffers] Received sort completion:', 'result' in msg ? msg.result : undefined);
-        setIsLoadingRef.current(false);
-        setProgressUpdateRef.current(null);
-        if ('result' in msg && msg.result && typeof msg.result === 'object' && 'success' in msg.result) {
-          setLastResultRef.current(msg.result as SortResult);
-        }
-      }
-    };
-
-    chrome.runtime.onMessage.addListener(messageListener);
-    return () => {
-      try {
-        chrome.runtime.onMessage.removeListener(messageListener);
-      } catch (error) {
-        console.log('[useSortOffers] Failed to remove message listener (extension context may be invalidated):', error);
-      }
-    };
-  }, []);
+  });
 
   const handleSort = useCallback(async (offerTypeFilter: OfferType = 'all', channelFilter: ChannelType = 'all') => {
     console.log('[useSortOffers] handleSort called with config:', sortConfig, 'offerTypeFilter:', offerTypeFilter, 'channelFilter:', channelFilter);

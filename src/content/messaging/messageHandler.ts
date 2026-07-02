@@ -6,6 +6,8 @@ import { getWatcherCleanup } from '../state';
 import { buildSearchIndex, executeSearch, scrollToOffer, isSearchIndexReady } from '../modules/search';
 import { extractExportData } from '../modules/export';
 import { findAllTiles } from '../../shared/domHelpers';
+import type { ContentInboundMessage } from '../../types/messages';
+import type { ProgressState } from '../../types/progress';
 
 /**
  * Sets up the Chrome message listener for handling requests from the popup.
@@ -21,24 +23,7 @@ export function setupMessageHandler(
   processedTiles: WeakMap<HTMLElement, boolean>,
   favoritesObserver: { current: MutationObserver | null },
   reinjectStarsCallback: () => Promise<void>,
-  progressState: {
-    sort: {
-      isActive: boolean;
-      progress: {
-        type: "pagination" | "sorting";
-        offersLoaded?: number;
-        pagesLoaded?: number;
-        totalOffers?: number;
-      } | null;
-    };
-    filter: {
-      isActive: boolean;
-      progress: {
-        offersLoaded: number;
-        pagesLoaded: number;
-      } | null;
-    };
-  }
+  progressState: ProgressState
 ) {
   console.log('[MessageHandler] Setting up message listener...');
 
@@ -50,22 +35,26 @@ export function setupMessageHandler(
       return false;
     }
 
+    // Narrow to the subset of messages the content script is expected to handle.
+    // Unknown `type` values fall through to the exhaustiveness check in `default`.
+    const inbound = message as ContentInboundMessage;
+
     const handleAsync = async () => {
-      console.log('[MessageHandler] Handling message type:', message.type);
-      switch (message.type) {
-        case 'SORT_REQUEST':
+      console.log('[MessageHandler] Handling message type:', inbound.type);
+      switch (inbound.type) {
+        case 'SORT_REQUEST': {
           console.log('[MessageHandler] Processing SORT_REQUEST');
           progressState.sort.isActive = true;
           progressState.sort.progress = null;
           const sortResult = await executeSorting(
-            message.criteria,
-            message.order,
+            inbound.criteria,
+            inbound.order,
             fullyPaginated,
             processedTiles,
             reinjectStarsCallback,
-            message.offerTypeFilter || 'all',
+            inbound.offerTypeFilter || 'all',
             progressState,
-            message.channelFilter || 'all'
+            inbound.channelFilter || 'all'
           );
           progressState.sort.isActive = false;
           progressState.sort.progress = null;
@@ -81,30 +70,33 @@ export function setupMessageHandler(
           }
 
           return sortResult;
-        case 'FILTER_REQUEST':
-          progressState.filter.isActive = message.showFavoritesOnly;
+        }
+        case 'FILTER_REQUEST': {
+          progressState.filter.isActive = inbound.showFavoritesOnly;
           progressState.filter.progress = null;
           const filterResult = await applyFavoritesFilter(
-            message.showFavoritesOnly,
-            message.offerTypeFilter || 'all',
+            inbound.showFavoritesOnly,
+            inbound.offerTypeFilter || 'all',
             fullyPaginated,
-            message.channelFilter || 'all'
+            inbound.channelFilter || 'all'
           );
           progressState.filter.isActive = false;
           progressState.filter.progress = null;
           return filterResult;
+        }
         case 'LOAD_ALL_REQUEST':
           return await loadAllOffers(fullyPaginated);
         case 'INJECT_FAVORITES_REQUEST':
           return await injectFavorites(favoritesObserver);
-        case 'REMOVE_FAVORITES_REQUEST':
+        case 'REMOVE_FAVORITES_REQUEST': {
           const watcherCleanup = getWatcherCleanup();
           if (watcherCleanup) {
             watcherCleanup.cleanupAll();
           }
           return await removeFavoritesStars(favoritesObserver);
+        }
         case 'UPDATE_STAR_STATE':
-          updateStarState(message.merchantTLD, message.isFavorited);
+          updateStarState(inbound.merchantTLD, inbound.isFavorited);
           return { success: true };
         case 'GET_SORT_PROGRESS':
           console.log('[MessageHandler] Processing GET_SORT_PROGRESS');
@@ -121,16 +113,17 @@ export function setupMessageHandler(
         case 'BUILD_SEARCH_INDEX':
           console.log('[MessageHandler] Processing BUILD_SEARCH_INDEX');
           return buildSearchIndex();
-        case 'SEARCH_QUERY':
-          console.log('[MessageHandler] Processing SEARCH_QUERY:', message.query);
-          const searchResult = executeSearch(message.query);
+        case 'SEARCH_QUERY': {
+          console.log('[MessageHandler] Processing SEARCH_QUERY:', inbound.query);
+          const searchResult = executeSearch(inbound.query);
           return {
             ...searchResult,
             searchEnabled: isSearchIndexReady(),
           };
+        }
         case 'SCROLL_TO_OFFER':
           console.log('[MessageHandler] Processing SCROLL_TO_OFFER');
-          return scrollToOffer(message.merchantTLD);
+          return scrollToOffer(inbound.merchantTLD);
         case 'GET_PAGINATION_STATUS':
           console.log('[MessageHandler] Processing GET_PAGINATION_STATUS');
           return {
@@ -153,9 +146,14 @@ export function setupMessageHandler(
               error: error instanceof Error ? error.message : 'Failed to extract offer data',
             };
           }
-        default:
-          console.log('[MessageHandler] Unknown message type:', message.type);
+        default: {
+          // Exhaustiveness check: if a new ContentInboundMessage variant is added
+          // without a case, TypeScript fails the build here.
+          const _exhaustive: never = inbound;
+          const unknownType = (_exhaustive as { type?: string })?.type;
+          console.log('[MessageHandler] Unknown message type:', unknownType);
           return { success: false, error: 'Unknown message type' };
+        }
       }
     };
 
