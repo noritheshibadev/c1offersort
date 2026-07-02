@@ -18,6 +18,18 @@ export default defineContentScript({
   runAt: 'document_idle',
 
   main(ctx) {
+    // Idempotency guard. This entrypoint runs both declaratively (document_idle)
+    // and on demand via browser.scripting.executeScript when the popup ensures
+    // the content script is present (e.g. on a tab that was open before the
+    // extension installed/updated). Re-running main() must not register a second
+    // message listener or tiles watcher, so bail out if we've already set up.
+    const injectionFlag = '__c1OffersSorterInjected';
+    if ((window as unknown as Record<string, boolean>)[injectionFlag]) {
+      console.log(`${config.logging.contexts.content} Already initialized, skipping re-injection`);
+      return;
+    }
+    (window as unknown as Record<string, boolean>)[injectionFlag] = true;
+
     console.log(`${config.logging.contexts.content} Initializing C1 Offers Sorter...`);
 
     // Validate we're on a Capital One offers page
@@ -63,6 +75,9 @@ export default defineContentScript({
         favoritesObserver.current.disconnect();
       }
       setWatcherCleanup(null);
+      // Clear the guard so a fresh re-injection (e.g. after an extension update
+      // orphans this context) is allowed to set everything up again.
+      delete (window as unknown as Record<string, boolean>)[injectionFlag];
     });
   },
 });

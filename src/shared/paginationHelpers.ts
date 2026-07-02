@@ -174,12 +174,20 @@ export function withPreservedScroll(fn: () => void): void {
 }
 
 /**
- * Wait for new tiles to appear with early exit
- * Polls for tile count changes and exits early when new tiles detected
+ * Wait for new tiles to appear, then wait for the count to STABILIZE.
+ *
+ * Capital One renders a "View More" batch in two phases: a small partial batch
+ * lands almost immediately (e.g. +6 tiles) and the full batch (e.g. +90) lands
+ * ~250ms later. Exiting on the first count increase returns mid-render, while
+ * the button is transiently detached — which makes the caller think pagination
+ * is complete. So once tiles start arriving we keep polling until the count
+ * holds steady across STABILIZE_POLLS consecutive checks before returning.
  */
 export async function waitForNewTiles(startCount: number, maxWait: number): Promise<number> {
   const startTime = Date.now();
   let lastCount = startCount;
+  let stableCount = 0;
+  let sawIncrease = false;
 
   while (true) {
     const elapsed = Date.now() - startTime;
@@ -190,30 +198,117 @@ export async function waitForNewTiles(startCount: number, maxWait: number): Prom
       continue;
     }
 
-    // After MIN_DELAY, check for new tiles
     const currentCount = countTiles();
 
     if (currentCount > lastCount) {
-      // New tiles detected! Exit early
-      const actualTime = Date.now() - startTime;
-      console.log(
-        '[Pagination] Early exit: new tiles detected after',
-        actualTime,
-        'ms (saved',
-        maxWait - actualTime,
-        'ms)'
-      );
-      return actualTime;
+      // Growth detected (possibly a partial batch) - keep waiting for the
+      // count to settle rather than exiting on the first tick.
+      sawIncrease = true;
+      stableCount = 0;
+      lastCount = currentCount;
+    } else if (sawIncrease) {
+      // No growth this poll, but we've already seen tiles arrive. Count
+      // consecutive steady polls; once stable, the batch has fully landed.
+      stableCount++;
+      if (stableCount >= PAGINATION_CONFIG.STABILIZE_POLLS) {
+        const actualTime = Date.now() - startTime;
+        console.log(
+          '[Pagination] Tiles stabilized at',
+          currentCount,
+          'after',
+          actualTime,
+          'ms'
+        );
+        return actualTime;
+      }
     }
 
-    // Check if we've exceeded max wait time
+    // Hard ceiling so a stuck render can't hang the loop forever.
     if (elapsed >= maxWait) {
       return Date.now() - startTime;
     }
 
-    lastCount = currentCount;
     await sleep(PAGINATION_CONFIG.POLL_INTERVAL);
   }
+}
+
+// ========================================
+// RATE-LIMIT (HTTP 429) DETECTION
+// ========================================
+
+/**
+ * Timestamp (ms) of the most recently observed HTTP 429 response, or 0 if none.
+ * The pagination loop reads this to decide when to back off.
+ */
+let lastRateLimitTime = 0;
+
+/** Original network functions, captured so monitoring can be removed cleanly. */
+let originalFetch: typeof window.fetch | null = null;
+let originalXhrOpen: typeof XMLHttpRequest.prototype.open | null = null;
+
+/**
+ * Clear the rate-limit marker. Call this after backing off so the next click is
+ * actually attempted; the backoff then only escalates if that click draws a
+ * fresh 429, rather than re-triggering on a stale timestamp.
+ */
+export function clearRateLimit(): void {
+  lastRateLimitTime = 0;
+}
+
+/**
+ * Returns true if a 429 was observed within the last `windowMs` milliseconds.
+ */
+export function wasRecentlyRateLimited(windowMs: number): boolean {
+  return lastRateLimitTime > 0 && Date.now() - lastRateLimitTime < windowMs;
+}
+
+/**
+ * Start watching network responses for HTTP 429 (Too Many Requests).
+ *
+ * The pagination loop clicks a React button and never sees HTTP responses
+ * directly, so we wrap fetch and XHR to record when Capital One rate-limits us.
+ * Wrappers are pass-through and only inspect the status code.
+ */
+export function startRateLimitMonitor(): void {
+  if (originalFetch) return; // already monitoring
+
+  const markIf429 = (status: number) => {
+    if (status === 429) {
+      lastRateLimitTime = Date.now();
+      console.warn('[Pagination] Detected HTTP 429 (rate limited)');
+    }
+  };
+
+  originalFetch = window.fetch;
+  window.fetch = async function (...args: Parameters<typeof window.fetch>) {
+    const response = await originalFetch!.apply(this, args);
+    markIf429(response.status);
+    return response;
+  };
+
+  originalXhrOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (
+    this: XMLHttpRequest,
+    ...args: Parameters<typeof XMLHttpRequest.prototype.open>
+  ) {
+    this.addEventListener('loadend', () => markIf429(this.status));
+    return originalXhrOpen!.apply(this, args);
+  };
+}
+
+/**
+ * Stop watching network responses and restore the original fetch/XHR.
+ */
+export function stopRateLimitMonitor(): void {
+  if (originalFetch) {
+    window.fetch = originalFetch;
+    originalFetch = null;
+  }
+  if (originalXhrOpen) {
+    XMLHttpRequest.prototype.open = originalXhrOpen;
+    originalXhrOpen = null;
+  }
+  lastRateLimitTime = 0;
 }
 
 /**

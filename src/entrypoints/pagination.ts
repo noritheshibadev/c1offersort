@@ -20,6 +20,10 @@ import {
   sleep,
   cancelSleep,
   cleanupPaginationElements,
+  startRateLimitMonitor,
+  stopRateLimitMonitor,
+  wasRecentlyRateLimited,
+  clearRateLimit,
   DOM_BRIDGE_IDS,
 } from '@/shared/paginationHelpers';
 
@@ -43,9 +47,14 @@ export default defineUnlistedScript(() => {
     let pagesLoaded = 0;
     let currentDelay = PAGINATION_CONFIG.INITIAL_DELAY;
     let consecutiveFailures = 0;
+    let rateLimitBackoffs = 0;
 
     // Moving average for adaptive delay
     const responseTimeHistory: number[] = [];
+
+    // Watch for HTTP 429 responses so we can back off instead of hammering the
+    // API (which makes Capital One return more 429s and stalls pagination).
+    startRateLimitMonitor();
 
     console.log('[Pagination] Starting pagination loop with adaptive delays');
 
@@ -122,6 +131,49 @@ export default defineUnlistedScript(() => {
         break;
       }
 
+      // If Capital One recently rate-limited us (HTTP 429), pause with
+      // exponential backoff before clicking again so the limit can clear,
+      // rather than hammering the API and stalling pagination entirely.
+      if (wasRecentlyRateLimited(PAGINATION_CONFIG.RATE_LIMIT_WINDOW)) {
+        if (rateLimitBackoffs >= PAGINATION_CONFIG.RATE_LIMIT_MAX_BACKOFFS) {
+          console.warn(
+            '[Pagination] Still rate-limited after',
+            rateLimitBackoffs,
+            'backoffs - stopping with partial results'
+          );
+          cancelSleep();
+          cleanupPaginationElements();
+          break;
+        }
+
+        const backoff = Math.min(
+          PAGINATION_CONFIG.RATE_LIMIT_BASE_BACKOFF * Math.pow(2, rateLimitBackoffs),
+          PAGINATION_CONFIG.RATE_LIMIT_MAX_BACKOFF
+        );
+        rateLimitBackoffs++;
+        console.warn(
+          '[Pagination] Rate limited - backing off',
+          backoff + 'ms (backoff',
+          rateLimitBackoffs,
+          'of',
+          PAGINATION_CONFIG.RATE_LIMIT_MAX_BACKOFFS + ')'
+        );
+        await sleep(backoff);
+
+        // Clear the marker so the retried iteration actually clicks; the backoff
+        // only escalates again if that click draws a fresh 429.
+        clearRateLimit();
+
+        // Re-attempt this iteration after backing off (don't count it as a
+        // pagination attempt or a failure - it was throttling, not end-of-data).
+        attempt--;
+        continue;
+      }
+
+      // Made it past the rate-limit gate without a recent 429: reset the counter
+      // so a future burst gets the full backoff ladder again.
+      rateLimitBackoffs = 0;
+
       const beforeCount = countTiles();
       console.log(
         '[Pagination] Attempt',
@@ -196,16 +248,25 @@ export default defineUnlistedScript(() => {
           'ms'
         );
 
-        // Adaptive delay based on moving average
+        // Adaptive delay based on moving average. Shrink gently so we settle at
+        // a sustainable request cadence rather than racing back to the floor and
+        // re-tripping the rate limit.
         if (avgResponseTime < PAGINATION_CONFIG.FAST_THRESHOLD) {
-          currentDelay = Math.max(currentDelay * 0.75, PAGINATION_CONFIG.MIN_DELAY);
+          currentDelay = Math.max(currentDelay * 0.9, PAGINATION_CONFIG.MIN_DELAY);
           console.log('[Pagination] Fast avg - reducing delay to', Math.round(currentDelay), 'ms');
         } else if (avgResponseTime < PAGINATION_CONFIG.SLOW_THRESHOLD) {
-          currentDelay = Math.max(currentDelay * 0.88, PAGINATION_CONFIG.MIN_DELAY);
+          currentDelay = Math.max(currentDelay * 0.95, PAGINATION_CONFIG.MIN_DELAY);
           console.log('[Pagination] Normal avg - reducing delay to', Math.round(currentDelay), 'ms');
         } else {
           console.log('[Pagination] Slow avg - keeping delay at', Math.round(currentDelay), 'ms');
         }
+      } else if (wasRecentlyRateLimited(PAGINATION_CONFIG.RATE_LIMIT_WINDOW)) {
+        // No new tiles because we were just rate-limited - NOT end-of-data.
+        // Don't count this as a failure; the backoff gate at the top of the next
+        // iteration will pause and then we retry the same click.
+        console.warn(
+          '[Pagination] No new tiles, but a 429 was just seen - treating as throttling, not end-of-offers'
+        );
       } else {
         consecutiveFailures++;
         console.log('[Pagination] No new tiles detected (failure', consecutiveFailures, ')');
@@ -224,6 +285,9 @@ export default defineUnlistedScript(() => {
 
     console.log('[Pagination] Pagination complete, pages loaded:', pagesLoaded);
     cancelSleep();
+
+    // Restore the original fetch/XHR now that pagination is done.
+    stopRateLimitMonitor();
 
     // Create result element (will be cleaned up by content script)
     const resultElement = document.createElement('div');

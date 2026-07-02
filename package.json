@@ -1,6 +1,6 @@
 {
   "name": "c1-offers-sorter",
-  "version": "2.4.0",
+  "version": "2.6.0",
   "description": "Search, sort, and organize Capital One shopping offers by mileage value",
   "type": "module",
   "scripts": {

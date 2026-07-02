@@ -130,6 +130,8 @@ export function useSortOffers(): UseSortOffersResult {
         return;
       }
 
+      // sendSortRequest self-heals the content script if the tab was open before
+      // the extension installed/updated (see ChromeService.sendToTab).
       console.log('[useSortOffers] Executing sort in active tab...');
       const result = await chromeService.sendSortRequest(currentTab.id, sortConfig, offerTypeFilter, channelFilter);
       console.log('[useSortOffers] Sort result:', result);

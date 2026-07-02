@@ -11,6 +11,44 @@ import type {
   SortingStartMessage,
 } from '../types/messages';
 
+/**
+ * Retry tuning for tab messaging. A "receiving end does not exist" error can
+ * mean the content script is registered but hasn't finished initializing yet
+ * (it runs at document_idle). A few short retries cover that transient window.
+ *
+ * The *persistent* case — a tab open before the extension installed/updated, so
+ * no content script exists at all — is NOT handled here. Retrying can't fix it;
+ * ChromeService.sendToTab catches that and re-injects the script. So we keep
+ * this window short (~600ms) to fail fast into that recovery path.
+ */
+const TAB_RETRY = {
+  /** Number of retries after the initial attempt. */
+  MAX_RETRIES: 3,
+  /** Base delay in ms before the first retry. */
+  BASE_DELAY: 100,
+  /** Backoff multiplier applied each retry. */
+  BACKOFF: 1.5,
+  /** Ceiling on any single retry delay in ms. */
+  MAX_DELAY: 300,
+} as const;
+
+/** True for errors that mean "content script not ready yet" (worth retrying). */
+function isConnectionNotReadyError(error: Error): boolean {
+  return (
+    error.message.includes('Could not establish connection') ||
+    error.message.includes('Receiving end does not exist')
+  );
+}
+
+/**
+ * True when an error means the target tab has no content script listening.
+ * The caller can recover by (re)injecting the content script and retrying.
+ */
+export function isContentScriptMissing(error: unknown): boolean {
+  const err = error instanceof Error ? error : new Error(String(error));
+  return isConnectionNotReadyError(err);
+}
+
 export class MessageBus {
   /**
    * Send a message to the background script or content script
@@ -25,12 +63,15 @@ export class MessageBus {
   }
 
   /**
-   * Send a message to a specific tab with retry logic
+   * Send a message to a specific tab with retry logic.
+   *
+   * "Receiving end does not exist" errors (content script not yet injected) are
+   * retried with exponential backoff; any other error fails immediately.
    */
   static async sendToTab<T extends ExtensionMessage>(
     tabId: number,
     message: T,
-    retries = 2
+    retries = TAB_RETRY.MAX_RETRIES
   ): Promise<unknown> {
     let lastError: Error | undefined;
 
@@ -40,13 +81,17 @@ export class MessageBus {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
-        // Check if it's a "receiving end does not exist" error
-        const isConnectionError = lastError.message.includes('Could not establish connection') ||
-                                   lastError.message.includes('Receiving end does not exist');
-
-        if (isConnectionError && attempt < retries) {
-          console.warn(`[MessageBus] Connection attempt ${attempt + 1} failed, retrying in 100ms...`);
-          await new Promise(resolve => setTimeout(resolve, 100));
+        // Only retry when the content script simply isn't listening yet.
+        if (isConnectionNotReadyError(lastError) && attempt < retries) {
+          const delay = Math.min(
+            TAB_RETRY.BASE_DELAY * Math.pow(TAB_RETRY.BACKOFF, attempt),
+            TAB_RETRY.MAX_DELAY
+          );
+          console.warn(
+            `[MessageBus] Content script not ready (attempt ${attempt + 1}/${retries + 1}), ` +
+            `retrying in ${Math.round(delay)}ms...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
 

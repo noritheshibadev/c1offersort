@@ -11,7 +11,7 @@
  * Note: Uses WXT's globally provided `browser` object for cross-browser compatibility.
  */
 
-import { MessageBus } from '../messaging/messageBus';
+import { MessageBus, isContentScriptMissing } from '../messaging/messageBus';
 import { getWithTimeout, setWithTimeout } from '../utils/storageWithTimeout';
 import type {
   SortConfig,
@@ -105,13 +105,28 @@ class ChromeService {
   }
 
   /**
-   * Send a message to a specific tab with retry logic
+   * Send a message to a specific tab, self-healing the content script if needed.
+   *
+   * If the first send fails because the content script isn't listening (e.g. the
+   * tab was open before the extension installed/updated, so the declarative
+   * script was never injected), we programmatically inject it once and retry.
+   * This makes every popup→content message robust without each call site having
+   * to ensure injection itself.
    */
   async sendToTab<TResponse = unknown>(
     tabId: number,
     message: ExtensionMessage
   ): Promise<TResponse> {
-    return MessageBus.sendToTab(tabId, message) as Promise<TResponse>;
+    try {
+      return (await MessageBus.sendToTab(tabId, message)) as TResponse;
+    } catch (error) {
+      if (!isContentScriptMissing(error)) {
+        throw error;
+      }
+      console.warn('[ChromeService] Content script not listening, injecting and retrying...');
+      await this.ensureContentScript(tabId);
+      return (await MessageBus.sendToTab(tabId, message)) as TResponse;
+    }
   }
 
   /**
@@ -121,6 +136,28 @@ class ChromeService {
     message: ExtensionMessage
   ): Promise<TResponse> {
     return MessageBus.sendToActiveTab(message) as Promise<TResponse>;
+  }
+
+  /**
+   * Guarantee the content script is present and listening in a tab before
+   * messaging it.
+   *
+   * The content script is declared declaratively (runAt: document_idle), but a
+   * declarative script is NOT injected into tabs that were already open when the
+   * extension installed or updated — Chrome silently auto-updates extensions, so
+   * a long-lived capitaloneoffers.com tab can end up with no live content script
+   * and every message fails with "Receiving end does not exist". Retrying can't
+   * fix that; only (re)injection can.
+   *
+   * This programmatically injects the content script via scripting.executeScript.
+   * The content script's main() is idempotent (guarded by a window flag), so
+   * re-running it on a tab that already has a live script is a cheap no-op.
+   */
+  async ensureContentScript(tabId: number): Promise<void> {
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ['content-scripts/content.js'],
+    });
   }
 
   // ============================================================================
