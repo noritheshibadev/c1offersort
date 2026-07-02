@@ -12,8 +12,7 @@ import { VALID_URLS } from '@/utils/constants';
 
 export default defineContentScript({
   matches: [
-    'https://capitaloneoffers.com/feed*',
-    'https://capitaloneoffers.com/c1-offers*',
+    'https://capitaloneoffers.com/*',
   ],
   runAt: 'document_idle',
 
@@ -32,17 +31,19 @@ export default defineContentScript({
 
     console.log(`${config.logging.contexts.content} Initializing C1 Offers Sorter...`);
 
-    // Validate we're on a Capital One offers page
+    // The match pattern covers the whole domain since the SPA can route into
+    // /feed without a full navigation, but only /feed and /c1-offers have the
+    // offers grid this script scrapes.
     const currentUrl = window.location.href;
     const isValidPage = VALID_URLS.some((validUrl) => currentUrl.startsWith(validUrl));
 
     if (!isValidPage) {
-      console.error(
-        `${config.logging.contexts.content} Not a Capital One offers page - extension may not work correctly`
-      );
-    } else {
-      console.log(`${config.logging.contexts.content} Valid Capital One offers page detected`);
+      console.log(`${config.logging.contexts.content} Not a Capital One offers page, skipping setup`);
+      delete (window as unknown as Record<string, boolean>)[injectionFlag];
+      return;
     }
+
+    console.log(`${config.logging.contexts.content} Valid Capital One offers page detected`);
 
     const processedTiles = new WeakMap<HTMLElement, boolean>(); // WeakMap for automatic GC
     const fullyPaginated = { value: false };

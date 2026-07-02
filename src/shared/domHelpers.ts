@@ -299,8 +299,19 @@ export function findAllTiles(suppressWarning = false): HTMLElement[] {
   }
 
   const tiles = Array.from(container.querySelectorAll(SELECTORS.offerTile)) as HTMLElement[];
-  // PERFORMANCE: Don't log on every call (called 20+ times during sort)
-  return tiles;
+  if (tiles.length > 0) {
+    // PERFORMANCE: Don't log on every call (called 20+ times during sort)
+    return tiles;
+  }
+
+  // Scoped to container so we don't pick up unrelated tiles elsewhere on the page.
+  if (!suppressWarning) {
+    console.warn('[DOMHelpers] CSS tile selector returned 0, trying data-testid fallback');
+  }
+  return Array.from(container.querySelectorAll('[data-testid^="feed-tile-"]')).filter((tile) => {
+    const testId = tile.getAttribute('data-testid') || '';
+    return !testId.includes('skeleton') && !testId.includes('carousel');
+  }) as HTMLElement[];
 }
 
 export function findViewMoreButton(): HTMLButtonElement | null {
